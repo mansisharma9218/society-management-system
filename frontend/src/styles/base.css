@@ -1,0 +1,27 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg-main);
+  font-family: var(--font-main);
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  color: var(--text-heading);
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+h1 { font-size: 36px; }
+h2 { font-size: 26px; }
+h3 { font-size: 18px; }
+
+p {
+  color: var(--text-body);
+}
