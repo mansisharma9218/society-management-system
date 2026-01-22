@@ -24,7 +24,7 @@ function Signup() {
     e.preventDefault();
     console.log("Signup data:", formData);
     // Add your signup logic here
-    navigate("/dashboard");
+    navigate("/login");
   };
 
   return (
