@@ -10,10 +10,10 @@ function Login({ onLogin }) {
     e.preventDefault();
     
     // For demo - check if it's admin login
-    const isAdminLogin = email === "admin@society.com" && password === "admin123";
-    const isResidentLogin = email === "resident@example.com" && password === "resident123";
+    const isAdminLogin = email === "admin@society.com" && password === "admin123#";
+    const isResidentLogin = email === "resident@example.com" && password === "resident123#";
     
-     if (isAdminLogin || isResidentLogin) {
+    if (isAdminLogin || isResidentLogin) {
       const fakeToken = "fake-jwt-token-" + Date.now();
       const fakeUser = {
         id: 1,
@@ -31,7 +31,7 @@ function Login({ onLogin }) {
       navigate("/dashboard");
     } else {
       // Show error message for invalid credentials
-      alert("Invalid email or password. Please try again.\n\nDemo credentials:\nAdmin: admin@society.com / admin123\nResident: resident@example.com / resident123");
+      alert("Invalid email or password. Please try again.");
     }
   };
 

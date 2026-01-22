@@ -26,17 +26,22 @@ function App() {
   const [role, setRole] = useState("resident");
   const [loading, setLoading] = useState(true);
 
-  // Check authentication on app load
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const userData = localStorage.getItem("user");
+    // Create a function to handle auth check
+    const checkAuth = () => {
+      const token = localStorage.getItem("authToken");
+      const userData = localStorage.getItem("user");
     
-    if (token && userData) {
-      setIsLoggedIn(true);
-      const user = JSON.parse(userData);
-      setRole(user.role || "resident");
-    }
-    setLoading(false);
+      if (token && userData) {
+        // Set both states at once to minimize renders
+        setIsLoggedIn(true);
+        const user = JSON.parse(userData);
+        setRole(user.role || "resident");
+      }
+      setLoading(false);
+    };
+  
+    checkAuth();
   }, []);
 
   // Handle login (to be called from Login page)

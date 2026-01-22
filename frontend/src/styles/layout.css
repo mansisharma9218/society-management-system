@@ -446,3 +446,79 @@
     gap: 16px;
   }
 }
+
+/* Add these status styles to your CSS */
+.status-paid {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: inline-block;
+}
+
+.status-pending {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: inline-block;
+}
+
+.status-overdue {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: inline-block;
+}
+
+/* Admin-specific styles for maintenance page */
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.payment-info-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.payment-info-btn {
+  min-width: 140px;
+}
+
+/* Adjust grid for admin columns */
+@media (max-width: 1024px) {
+  .maintenance-table th,
+  .maintenance-table td {
+    min-width: 120px;
+  }
+  
+  .action-buttons.grid-buttons {
+    max-width: 160px;
+  }
+}
+
+/* Responsive for admin actions */
+@media (max-width: 768px) {
+  .payment-info-actions {
+    flex-direction: column;
+  }
+  
+  .payment-info-btn {
+    min-width: 100%;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .header-actions .btn {
+    width: 100%;
+  }
+}
