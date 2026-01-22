@@ -1,5 +1,7 @@
-
+import { useNavigate } from "react-router-dom";
 function Flat() {
+  const navigate = useNavigate();
+
   return (
     <div className="page">
       <section className="page-header dashboard-header">
@@ -10,6 +12,9 @@ function Flat() {
 
         <div className="header-actions">
           <button className="btn btn-primary">Add Member</button>
+          <button className="btn btn-outline" onClick={() => navigate("/users")}>
+            View All Residents
+          </button>
           <button className="btn btn-outline">View Documents</button>
         </div>
       </section>
@@ -52,6 +57,13 @@ function Flat() {
             <li>Emily Doe (Daughter)</li>
             <li>Michael Doe (Son)</li>
           </ul>
+          <button 
+            className="btn btn-outline btn-sm"
+            onClick={() => navigate("/users")}
+            style={{ marginTop: "12px" }}
+          >
+            Browse All Residents →
+          </button>
         </div>
 
         <div className="card compact">
@@ -72,7 +84,14 @@ function Flat() {
         <div className="card">
           <div className="card-header">
             <h3>Recent Maintenance Payments</h3>
-            <button className="btn btn-outline btn-sm">Full History</button>
+            <div>
+              <button className="btn btn-outline btn-sm" onClick={() => navigate("/users")}>
+                Compare with Neighbors
+              </button>
+              <button className="btn btn-outline btn-sm" style={{ marginLeft: "8px" }}>
+                Full History
+              </button>
+            </div>
           </div>
           <div className="list">
             <div className="list-item">

@@ -31,7 +31,7 @@ function Signup() {
     <div className="auth-page">
       <div className="card auth-card">
         <h2 className="auth-title">Create Account</h2>
-        <p style={{ textAlign: "center", color: "var(--text-muted)", marginBottom: "24px" }}>
+        <p className="auth-subtitle">
           Join your society management system
         </p>
 
@@ -112,19 +112,15 @@ function Signup() {
             Create Account
           </button>
 
-          <div style={{ textAlign: "center", marginTop: "20px" }}>
-            <p style={{ color: "var(--text-muted)" }}>
+          <div className="auth-footer">
+            <p className="auth-footer-text">
               Already have an account?{" "}
-              <a 
-                href="/login" 
-                style={{ 
-                  color: "var(--primary)", 
-                  textDecoration: "none",
-                  cursor: "pointer"
-                }}
+              <span 
+                className="auth-link"
+                onClick={() => navigate("/login")}
               >
                 Login here
-              </a>
+              </span>
             </p>
           </div>
         </form>

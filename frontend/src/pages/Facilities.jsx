@@ -16,7 +16,7 @@ function Facilities() {
         <div className="header-actions">
           <button
             className="btn btn-primary"
-            onClick={() => navigate("/book-facility")}
+            onClick={() => navigate("/bookings")}
           >
             Book Facility
           </button>

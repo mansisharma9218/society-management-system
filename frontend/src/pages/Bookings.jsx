@@ -76,28 +76,28 @@ function Bookings() {
               View All
             </button>
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="table-container">
+            <table className="data-table">
               <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                  <th style={{ textAlign: "left", padding: "12px", fontSize: "14px" }}>Facility</th>
-                  <th style={{ textAlign: "left", padding: "12px", fontSize: "14px" }}>Date & Time</th>
-                  <th style={{ textAlign: "left", padding: "12px", fontSize: "14px" }}>Status</th>
+                <tr>
+                  <th>Facility</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {bookings.map((booking) => (
-                  <tr key={booking.id} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                    <td style={{ padding: "12px" }}>
-                      <div>{booking.facility}</div>
-                      <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>{booking.flat}</div>
+                  <tr key={booking.id}>
+                    <td>
+                      <div className="table-primary">{booking.facility}</div>
+                      <div className="table-secondary">{booking.flat}</div>
                     </td>
-                    <td style={{ padding: "12px" }}>
-                      <div>{booking.date}</div>
-                      <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>{booking.time}</div>
+                    <td>
+                      <div className="table-primary">{booking.date}</div>
+                      <div className="table-secondary">{booking.time}</div>
                     </td>
-                    <td style={{ padding: "12px" }}>
-                      <div>{booking.status}</div>
+                    <td>
+                      <div className="table-primary">{booking.status}</div>
                     </td>
                   </tr>
                 ))}

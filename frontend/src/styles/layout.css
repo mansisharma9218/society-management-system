@@ -311,3 +311,138 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.auth-subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.auth-footer-text {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.auth-link {
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.data-table th {
+  text-align: left;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.data-table td {
+  padding: 12px;
+  vertical-align: top;
+}
+
+.table-primary {
+  font-weight: 500;
+  color: var(--text-heading);
+}
+
+.table-secondary {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Button disabled state */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  background: var(--primary);
+}
+
+/* Filter Card Styles */
+.filter-card {
+  margin-bottom: 24px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.filter-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* Table Count */
+.table-count {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+
+/* Card Description */
+.card-description {
+  margin-bottom: 16px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Action Buttons Container */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Responsive filters */
+@media (max-width: 768px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-options {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
