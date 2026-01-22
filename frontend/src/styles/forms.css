@@ -14,6 +14,31 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text-heading);
   transition: var(--transition);
+  font-family: inherit;
+  font-size: 15px;
+  display: block;
+}
+
+/* Specific styling for the Select/Dropdown to make it look modern */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  
+  /* Custom arrow icon using a base64 SVG to avoid external assets */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255, 255, 255, 0.5)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 18px;
+  padding-right: 48px; /* Space for the arrow */
+}
+
+/* Style the popup options list */
+.input option {
+  background-color: var(--bg-deep);
+  color: var(--text-heading);
+  padding: 10px;
 }
 
 .input::placeholder {
