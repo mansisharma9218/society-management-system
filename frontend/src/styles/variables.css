@@ -1,6 +1,6 @@
 :root {
-  --primary: #6f5cf1;
-  --primary-hover: #5b4ae6;
+  --primary: #2f70df;
+  --primary-hover: #1146a2;
 
   --danger: #e5484d;
 
@@ -10,7 +10,7 @@
 
   --bg-main: radial-gradient(
       1200px circle at 70% 10%,
-      rgba(27, 19, 64, 0.55),
+      rgba(20, 29, 97, 0.55),
       transparent 40%
     ),
     linear-gradient(
