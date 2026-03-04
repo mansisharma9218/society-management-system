@@ -690,3 +690,312 @@
     min-width: 100%;
   }
 }
+
+/* ===== NOTIFICATION STYLES ===== */
+.notifications-list {
+  margin-bottom: 20px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  border-radius: var(--radius-sm);
+  width: 100%;
+}
+
+.notification-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.notification-item.unread {
+  background: rgba(47, 112, 223, 0.05);
+}
+
+.notification-item.unread:hover {
+  background: rgba(47, 112, 223, 0.08);
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #2f70df;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-top: 8px;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.notification-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.notification-message {
+  color: var(--text-heading);
+  font-size: 15px;
+  line-height: 1.5;
+  flex: 1;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.notification-time {
+  color: var(--text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 60px;
+}
+
+.notification-footer {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.unread-badge {
+  display: inline-block;
+  background: #2f70df;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+/* Ensure the notification item takes full width in the card */
+.card .notification-item {
+  width: 100%;
+}
+
+/* Fix for the nav-divider to work properly with notifications */
+.nav-divider2 {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 12px;
+}
+
+@media (max-width: 768px) {
+  .notification-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .notification-time {
+    white-space: normal;
+    text-align: left;
+    min-width: auto;
+  }
+  
+  .notification-item {
+    padding: 12px;
+  }
+  
+}
+
+/* ===== BOOKINGS PAGE STYLES ===== */
+
+/* Layout */
+.bookings-layout {
+  display: grid;
+  gap: 24px;
+}
+
+.bookings-layout.admin-view {
+  grid-template-columns: 1fr 400px;
+}
+
+.bookings-layout.resident-view {
+  grid-template-columns: 1fr 400px;
+}
+
+/* Cards */
+.bookings-table-card,
+.booking-form-card {
+  padding: 24px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin-bottom: 20px;
+}
+
+/* Table Styles */
+.bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bookings-table th {
+  text-align: left;
+  padding: 12px 8px;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bookings-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: top;
+}
+
+.bookings-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Table Cell Content */
+.facility-name,
+.booked-by-name,
+.booking-date {
+  font-weight: 500;
+  color: var(--text-heading);
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.flat-number,
+.booking-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  min-width: 80px;
+}
+
+.status-confirmed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.status-cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Mark Booked Button */
+.mark-booked-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  min-width: 90px;
+  white-space: nowrap;
+}
+
+/* Date Input Fix */
+.date-input {
+  color-scheme: dark;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Submit Booking Button */
+.submit-booking-btn {
+  margin-top: 8px;
+}
+
+.submit-booking-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Form Group Spacing */
+.booking-form-card .form-group {
+  margin-bottom: 16px;
+}
+
+.booking-form-card .form-group:last-of-type {
+  margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .bookings-layout.admin-view,
+  .bookings-layout.resident-view {
+    grid-template-columns: 1fr;
+  }
+  
+  .booking-form-card {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .bookings-table th,
+  .bookings-table td {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  
+  .status-badge {
+    min-width: 60px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .mark-booked-btn {
+    min-width: 70px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+/* COMPLETE replacement of the icon */
+input[type="date"].input,
+input[type="date"].date-input {
+  position: relative;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM7 12h5v5H7v-5z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 20px !important;
+  padding-right: 40px !important;
+}
+
+/* Hide the default icon */
+input[type="date"].input::-webkit-calendar-picker-indicator,
+input[type="date"].date-input::-webkit-calendar-picker-indicator {
+  opacity: 0 !important;
+  position: absolute !important;
+  right: 0 !important;
+  width: 40px !important;
+  height: 100% !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+}
