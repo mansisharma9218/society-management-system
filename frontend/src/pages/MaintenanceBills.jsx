@@ -8,7 +8,16 @@ function MaintenanceBills() {
   const [role, setRole] = useState("resident");
   const [bills, setBills] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showGenerateBillModal, setShowGenerateBillModal] = useState(false);
+  const [generateForAll, setGenerateForAll] = useState(false);
   const navigate = useNavigate();
+
+  // Generate a unique bill ID
+  const generateBillId = () => {
+    const year = new Date().getFullYear();
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `BILL-${year}-${randomNum}`;
+  };
 
   // Initialize auth and fetch bills
   useEffect(() => {
@@ -27,108 +36,102 @@ function MaintenanceBills() {
       
       setRole(userRole);
       
-      // Sample data - replace with API calls
-      if (userRole === "admin") {
-        // Admin sees all society bills
-        const adminBills = [
+      // Get stored bills or use sample data
+      const storedBills = localStorage.getItem("maintenanceBills");
+      let initialBills = [];
+      
+      if (storedBills) {
+        try {
+          initialBills = JSON.parse(storedBills);
+        } catch (error) {
+          console.error("Error parsing stored bills:", error);
+        }
+      } else {
+        // Sample data exactly as shown in the image
+        initialBills = [
           {
-            id: "BILL-2024-001",
-            month: "January 2024",
+            id: "BILL-2025-001",
+            month: "January 2025",
             amount: 4500,
-            dueDate: "Jan 15, 2024",
+            dueDate: "Jan 15, 2025",
             status: "paid",
-            paidDate: "Jan 10, 2024",
+            paidDate: "Jan 10, 2025",
             transactionId: "TXN123456789",
             flat: "B-203",
             resident: "John Doe",
-            contact: "john@email.com",
-            details: "Monthly maintenance including water, security, and common area maintenance"
+            contact: "john@email.com"
           },
           {
-            id: "BILL-2024-002",
-            month: "February 2024",
+            id: "BILL-2025-002",
+            month: "February 2025",
             amount: 4500,
-            dueDate: "Feb 15, 2024",
+            dueDate: "Feb 15, 2025",
             status: "pending",
             paidDate: null,
             transactionId: null,
             flat: "A-101",
             resident: "Jane Smith",
-            contact: "jane@email.com",
-            details: "Monthly maintenance including water, security, and common area maintenance"
+            contact: "jane@email.com"
           },
           {
-            id: "BILL-2024-003",
-            month: "March 2024",
+            id: "BILL-2025-003",
+            month: "March 2025",
             amount: 5000,
-            dueDate: "Mar 15, 2024",
+            dueDate: "Mar 15, 2025",
             status: "overdue",
             paidDate: null,
             transactionId: null,
             flat: "C-305",
             resident: "Robert Johnson",
-            contact: "robert@email.com",
-            details: "Monthly maintenance + ₹500 special assessment for lift maintenance"
+            contact: "robert@email.com"
           },
           {
-            id: "BILL-2024-004",
-            month: "January 2024",
+            id: "BILL-2025-004",
+            month: "January 2025",
             amount: 4500,
-            dueDate: "Jan 15, 2024",
+            dueDate: "Jan 15, 2025",
             status: "paid",
-            paidDate: "Jan 12, 2024",
+            paidDate: "Jan 12, 2025",
             transactionId: "TXN987654321",
             flat: "D-412",
             resident: "Sarah Williams",
-            contact: "sarah@email.com",
-            details: "Monthly maintenance including water, security, and common area maintenance"
+            contact: "sarah@email.com"
           }
         ];
-        setBills(adminBills);
+        localStorage.setItem("maintenanceBills", JSON.stringify(initialBills));
+      }
+      
+      if (userRole === "admin") {
+        setBills(initialBills);
       } else {
-        // Resident sees only their bills
-        const residentBills = [
+        // Filter bills for the resident (using B-203 as example)
+        const residentBills = initialBills.filter(bill => bill.flat === "B-203");
+        setBills(residentBills.length ? residentBills : [
           {
-            id: "BILL-2024-001",
-            month: "January 2024",
+            id: "BILL-2025-001",
+            month: "January 2025",
             amount: 4500,
-            dueDate: "Jan 15, 2024",
+            dueDate: "Jan 15, 2025",
             status: "paid",
-            paidDate: "Jan 10, 2024",
+            paidDate: "Jan 10, 2025",
             transactionId: "TXN123456789",
             flat: "B-203",
-            resident: "Your Flat",
-            contact: "your@email.com",
-            details: "Monthly maintenance including water, security, and common area maintenance"
+            resident: "John Doe",
+            contact: "john@email.com"
           },
           {
-            id: "BILL-2024-002",
-            month: "February 2024",
+            id: "BILL-2025-002",
+            month: "February 2025",
             amount: 4500,
-            dueDate: "Feb 15, 2024",
+            dueDate: "Feb 15, 2025",
             status: "pending",
             paidDate: null,
             transactionId: null,
             flat: "B-203",
-            resident: "Your Flat",
-            contact: "your@email.com",
-            details: "Monthly maintenance including water, security, and common area maintenance"
-          },
-          {
-            id: "BILL-2024-003",
-            month: "March 2024",
-            amount: 5000,
-            dueDate: "Mar 15, 2024",
-            status: "overdue",
-            paidDate: null,
-            transactionId: null,
-            flat: "B-203",
-            resident: "Your Flat",
-            contact: "your@email.com",
-            details: "Monthly maintenance + ₹500 special assessment for lift maintenance"
+            resident: "John Doe",
+            contact: "john@email.com"
           }
-        ];
-        setBills(residentBills);
+        ]);
       }
       
       setIsInitialized(true);
@@ -138,8 +141,16 @@ function MaintenanceBills() {
   }, []);
 
   const months = [
-    "January 2024", "February 2024", "March 2024", 
-    "December 2023", "November 2023", "October 2023"
+    "January 2026", "February 2026", "March 2026", "April 2026",
+    "May 2026", "June 2026", "July 2026", "August 2026",
+    "September 2026", "October 2026", "November 2026", "December 2026"
+  ];
+
+  const flats = [
+    { flat: "A-101", resident: "Jane Smith", contact: "jane@email.com" },
+    { flat: "B-203", resident: "John Doe", contact: "john@email.com" },
+    { flat: "C-305", resident: "Robert Johnson", contact: "robert@email.com" },
+    { flat: "D-412", resident: "Sarah Williams", contact: "sarah@email.com" }
   ];
 
   const filteredBills = bills.filter(bill => {
@@ -169,9 +180,27 @@ function MaintenanceBills() {
 
   const totals = calculateTotals();
 
+  // Function to update bills and localStorage
+  const updateBills = (updatedBills) => {
+    setBills(updatedBills);
+    localStorage.setItem("maintenanceBills", JSON.stringify(updatedBills));
+  };
+
   const handlePayNow = (billId) => {
     if (role === "resident") {
-      alert(`Initiating payment for bill ${billId}`);
+      // Mark as paid for resident demo
+      const updatedBills = bills.map(bill => 
+        bill.id === billId 
+          ? { 
+              ...bill, 
+              status: "paid", 
+              paidDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).replace(',', ','),
+              transactionId: `TXN${Math.floor(Math.random() * 1000000000)}`
+            }
+          : bill
+      );
+      updateBills(updatedBills);
+      alert(`Payment completed for bill ${billId}`);
     } else {
       alert(`Admin: View payment details for ${billId}`);
     }
@@ -186,7 +215,71 @@ function MaintenanceBills() {
   };
 
   const handleGenerateBill = () => {
-    alert("Generating new maintenance bill for all flats...");
+    setShowGenerateBillModal(true);
+    setGenerateForAll(false);
+  };
+
+  const handleGenerateForAll = () => {
+    setGenerateForAll(true);
+  };
+
+  const handleGenerateForSingle = () => {
+    setGenerateForAll(false);
+  };
+
+  const handleConfirmGenerateBill = () => {
+    // Get form values
+    const monthSelect = document.querySelector('.modal-container select');
+    const amountInput = document.querySelector('.modal-container input[type="number"]');
+    const dueDateInput = document.querySelectorAll('.modal-container input[type="text"]')[0];
+    const flatSelect = document.querySelector('.modal-container .flat-select');
+    
+    const month = monthSelect ? monthSelect.value : "April 2026";
+    const amount = amountInput ? parseInt(amountInput.value) : 4500;
+    const dueDate = dueDateInput ? dueDateInput.value : "Apr 15, 2026";
+    
+    let newBills = [];
+    
+    if (generateForAll) {
+      // Generate for all flats
+      newBills = flats.map(flat => ({
+        id: generateBillId(),
+        month: month,
+        amount: amount,
+        dueDate: dueDate,
+        status: "pending",
+        paidDate: null,
+        transactionId: null,
+        flat: flat.flat,
+        resident: flat.resident,
+        contact: flat.contact
+      }));
+      alert(`Generated ${newBills.length} new maintenance bills for all flats`);
+    } else {
+      // Generate for single flat
+      const selectedFlat = flatSelect ? flatSelect.value : "B-203";
+      const flatData = flats.find(f => f.flat === selectedFlat) || flats[1];
+      
+      newBills = [{
+        id: generateBillId(),
+        month: month,
+        amount: amount,
+        dueDate: dueDate,
+        status: "pending",
+        paidDate: null,
+        transactionId: null,
+        flat: flatData.flat,
+        resident: flatData.resident,
+        contact: flatData.contact
+      }];
+      alert(`Generated new maintenance bill for ${flatData.flat} - ${flatData.resident}`);
+    }
+    
+    // Add new bills to existing bills
+    const updatedBills = [...bills, ...newBills];
+    updateBills(updatedBills);
+    
+    setShowGenerateBillModal(false);
   };
 
   const handleSendReminder = (billId, resident) => {
@@ -194,15 +287,56 @@ function MaintenanceBills() {
   };
 
   const handleMarkAsPaid = (billId) => {
-    alert(`Marking bill ${billId} as paid manually`);
-  };
-
-  const handleSendBulkReminders = () => {
-    alert("Sending reminders to all residents with pending payments...");
+    const updatedBills = bills.map(bill => 
+      bill.id === billId 
+        ? { 
+            ...bill, 
+            status: "paid", 
+            paidDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).replace(',', ','),
+            transactionId: `TXN${Math.floor(Math.random() * 1000000000)}`
+          }
+        : bill
+    );
+    updateBills(updatedBills);
+    
+    // Close expanded details if open for this bill
+    if (selectedBill?.id === billId) {
+      setSelectedBill(null);
+    }
+    
+    alert(`Bill ${billId} marked as paid successfully`);
   };
 
   const handleExportReport = () => {
-    alert("Exporting maintenance report...");
+    // Create CSV content
+    let csvContent = "Bill ID,Month,Amount,Due Date,Status,Paid Date,Transaction ID,Flat,Resident,Contact\n";
+    
+    filteredBills.forEach(bill => {
+      csvContent += `"${bill.id}","${bill.month}",${bill.amount},"${bill.dueDate}","${bill.status}","${bill.paidDate || 'N/A'}","${bill.transactionId || 'N/A'}","${bill.flat}","${bill.resident}","${bill.contact}"\n`;
+    });
+
+    // Add summary section
+    csvContent += "\n\nSUMMARY\n";
+    csvContent += `Total Bills,${filteredBills.length}\n`;
+    csvContent += `Total Amount,${totals.totalAmount}\n`;
+    csvContent += `Paid Amount,${totals.paidAmount}\n`;
+    csvContent += `Pending Amount,${totals.pendingAmount}\n`;
+    csvContent += `Paid Count,${totals.paidCount}\n`;
+    csvContent += `Pending Count,${totals.pendingCount}\n`;
+    csvContent += `Collection Rate,${totals.totalAmount > 0 ? Math.round((totals.paidAmount / totals.totalAmount) * 100) : 0}%\n`;
+    csvContent += `Filters Applied,Status: ${filterStatus}, Month: ${filterMonth}\n`;
+    csvContent += `Generated On,${new Date().toLocaleString()}\n`;
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `maintenance-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (!isInitialized) {
@@ -219,14 +353,86 @@ function MaintenanceBills() {
 
   return (
     <div className="page">
-      {/* HEADER - Different for Admin vs Resident */}
+      {/* GENERATE BILL MODAL */}
+      {showGenerateBillModal && (
+        <div className="modal-overlay">
+          <div className="modal-container card">
+            <h2 className="modal-title">Generate Monthly Bills</h2>
+            <p className="modal-subtitle">Create new maintenance bills</p>
+            
+            <div className="generate-options">
+              <button 
+                className={`btn ${!generateForAll ? 'btn-primary' : 'btn-outline'} option-btn`}
+                onClick={handleGenerateForSingle}
+              >
+                Generate for Single Flat
+              </button>
+              <button 
+                className={`btn ${generateForAll ? 'btn-primary' : 'btn-outline'} option-btn`}
+                onClick={handleGenerateForAll}
+              >
+                Generate for All Flats
+              </button>
+            </div>
+
+            {!generateForAll && (
+              <div className="form-group">
+                <label className="label">Select Flat</label>
+                <select className="input flat-select">
+                  {flats.map(flat => (
+                    <option key={flat.flat} value={flat.flat}>
+                      {flat.flat} - {flat.resident}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="label">Month</label>
+              <select className="input">
+                {months.map(month => (
+                  <option key={month} value={month}>{month}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="label">Amount (₹)</label>
+              <input type="number" className="input" defaultValue="4500" />
+            </div>
+
+            <div className="form-group">
+              <label className="label">Due Date</label>
+              <input type="text" className="input" defaultValue="Apr 15, 2026" placeholder="e.g., Apr 15, 2026" />
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="btn btn-outline modal-btn"
+                onClick={() => setShowGenerateBillModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary modal-btn"
+                onClick={handleConfirmGenerateBill}
+              >
+                Generate {generateForAll ? 'Bills' : 'Bill'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
       <section className="page-header dashboard-header">
         <div>
           <h1>Maintenance {role === "admin" ? "Management" : "Bills"}</h1>
           <p className="card-description">
             {role === "admin" 
-              ? "Manage society maintenance bills, send reminders, and track payments."
-              : "View, pay, and track your maintenance bills. All transactions are recorded and invoices available for download."
+              ? "Manage society maintenance bills and track payments."
+              : "View and pay your maintenance bills."
             }
           </p>
         </div>
@@ -237,27 +443,19 @@ function MaintenanceBills() {
               <button className="btn btn-primary" onClick={handleGenerateBill}>
                 Generate Bills
               </button>
-              <button className="btn btn-outline" onClick={handleSendBulkReminders}>
-                Send Reminders
-              </button>
               <button className="btn btn-outline" onClick={handleExportReport}>
                 Export Report
               </button>
             </>
           ) : (
-            <>
-              <button className="btn btn-primary" onClick={() => handlePayNow("ALL")}>
-                Pay All Pending
-              </button>
-              <button className="btn btn-outline" onClick={() => alert("View Payment History")}>
-                Payment History
-              </button>
-            </>
+            <button className="btn btn-outline" onClick={() => alert("Download All Invoices")}>
+              Download All Invoices
+            </button>
           )}
         </div>
       </section>
 
-      {/* SUMMARY CARDS - Different Metrics */}
+      {/* SUMMARY CARDS */}
       <section className="grid grid-4">
         {role === "admin" ? (
           <>
@@ -289,7 +487,7 @@ function MaintenanceBills() {
               <h2>{bills.length}</h2>
               <p>All time</p>
             </div>
-            <div className="card stat" style={{ cursor: "pointer" }} onClick={() => setFilterStatus("pending")}>
+            <div className="card stat" onClick={() => setFilterStatus("pending")}>
               <h3>Amount Due</h3>
               <h2>₹{totals.pendingAmount.toLocaleString()}</h2>
               <p>Payment pending</p>
@@ -356,7 +554,7 @@ function MaintenanceBills() {
         </div>
       </div>
 
-      {/* BILLS TABLE - Different Columns for Admin vs Resident */}
+      {/* BILLS TABLE */}
       <div className="card">
         <div className="card-header">
           <h3>
@@ -392,9 +590,6 @@ function MaintenanceBills() {
                     <tr key={bill.id}>
                       <td>
                         <div className="table-primary">{bill.id}</div>
-                        {role === "resident" && (
-                          <div className="table-secondary">{bill.flat}</div>
-                        )}
                       </td>
                       {role === "admin" && (
                         <>
@@ -428,7 +623,7 @@ function MaintenanceBills() {
                         <div className="action-buttons">
                           {role === "admin" ? (
                             <>
-                              {bill.status !== "paid" && (
+                              {bill.status !== "paid" ? (
                                 <>
                                   <button 
                                     className="btn btn-primary btn-sm"
@@ -442,14 +637,21 @@ function MaintenanceBills() {
                                   >
                                     Mark Paid
                                   </button>
+                                  <button 
+                                    className="btn btn-outline btn-sm"
+                                    onClick={() => handleViewDetails(bill)}
+                                  >
+                                    {selectedBill?.id === bill.id ? "Hide" : "View"}
+                                  </button>
                                 </>
+                              ) : (
+                                <button 
+                                  className="btn btn-outline btn-sm"
+                                  onClick={() => handleViewDetails(bill)}
+                                >
+                                  {selectedBill?.id === bill.id ? "Hide" : "View"}
+                                </button>
                               )}
-                              <button 
-                                className="btn btn-outline btn-sm"
-                                onClick={() => handleViewDetails(bill)}
-                              >
-                                {selectedBill?.id === bill.id ? "Hide" : "View"}
-                              </button>
                             </>
                           ) : (
                             <>
@@ -482,53 +684,51 @@ function MaintenanceBills() {
                     
                     {/* Expanded Details Row */}
                     {selectedBill?.id === bill.id && (
-                      <tr>
+                      <tr className="details-row">
                         <td colSpan={role === "admin" ? 8 : 6}>
-                          <div style={{ 
-                            padding: '16px', 
-                            background: 'var(--bg-muted)', 
-                            borderRadius: 'var(--radius-sm)',
-                            marginTop: '8px'
-                          }}>
-                            <h4 style={{ marginBottom: '8px' }}>Bill Details</h4>
-                            <p style={{ marginBottom: '12px' }}>{bill.details}</p>
+                          <div className="bill-details">
+                            <h4>Bill Details</h4>
                             
-                            <div style={{ 
-                              display: 'grid', 
-                              gridTemplateColumns: role === 'admin' ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)', 
-                              gap: '16px' 
-                            }}>
+                            <div className={`details-grid ${role === "admin" ? "admin-grid" : "resident-grid"}`}>
                               <div>
                                 <p className="table-secondary">Bill ID</p>
-                                <p>{bill.id}</p>
+                                <p className="table-primary">{bill.id}</p>
                               </div>
                               <div>
                                 <p className="table-secondary">Month</p>
-                                <p>{bill.month}</p>
+                                <p className="table-primary">{bill.month}</p>
+                              </div>
+                              <div>
+                                <p className="table-secondary">Amount</p>
+                                <p className="table-primary">₹{bill.amount.toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <p className="table-secondary">Due Date</p>
+                                <p className="table-primary">{bill.dueDate}</p>
                               </div>
                               {role === "admin" && (
                                 <div>
                                   <p className="table-secondary">Contact</p>
-                                  <p>{bill.contact}</p>
+                                  <p className="table-primary">{bill.contact}</p>
                                 </div>
                               )}
                               {bill.status === "paid" && (
                                 <>
                                   <div>
                                     <p className="table-secondary">Transaction ID</p>
-                                    <p>{bill.transactionId}</p>
+                                    <p className="table-primary">{bill.transactionId}</p>
                                   </div>
                                   <div>
                                     <p className="table-secondary">Payment Date</p>
-                                    <p>{bill.paidDate}</p>
+                                    <p className="table-primary">{bill.paidDate}</p>
                                   </div>
                                 </>
                               )}
                             </div>
                             
                             {role === "admin" && bill.status !== "paid" && (
-                              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                                <h5 style={{ marginBottom: '8px' }}>Admin Actions</h5>
+                              <div className="admin-actions">
+                                <h5>Admin Actions</h5>
                                 <div className="action-buttons">
                                   <button 
                                     className="btn btn-primary btn-sm"
@@ -563,42 +763,27 @@ function MaintenanceBills() {
         )}
 
         {/* FOOTER SECTION */}
-        <div style={{ 
-          marginTop: '24px', 
-          paddingTop: '20px', 
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)' 
-        }}>
+        <div className="footer-section">
           <h4>
             {role === "admin" ? "Administration Tools" : "Payment Information"}
           </h4>
-          <p className="table-secondary" style={{ marginTop: '8px' }}>
+          <p className="table-secondary">
             {role === "admin" 
-              ? "Use the tools above to manage society maintenance efficiently. Regular reminders improve collection rates."
-              : "Payments can be made via UPI, Net Banking, or Credit/Debit Card. All transactions are secured and encrypted."
+              ? "Use the tools above to manage society maintenance efficiently."
+              : "Payments can be made via UPI, Net Banking, or Credit/Debit Card."
             }
           </p>
-          <div className="action-buttons" style={{ marginTop: '16px' }}>
+          <div className="action-buttons">
             {role === "admin" ? (
-              <>
-                <button className="btn btn-primary" onClick={handleGenerateBill}>
-                  Generate Monthly Bills
-                </button>
-                <button className="btn btn-outline" onClick={handleSendBulkReminders}>
-                  Send Bulk Reminders
-                </button>
-                <button className="btn btn-outline" onClick={handleExportReport}>
-                  Export Financial Report
-                </button>
-              </>
+              <button className="btn btn-outline payment-info-btn" onClick={handleExportReport}>
+                Export Financial Report
+              </button>
             ) : (
               <>
-                <button className="btn btn-outline" onClick={() => alert("View Payment History")}>
-                  Payment History
-                </button>
-                <button className="btn btn-outline" onClick={() => alert("Download All Invoices")}>
+                <button className="btn btn-outline payment-info-btn" onClick={() => alert("Download All Invoices")}>
                   Download All Invoices
                 </button>
-                <button className="btn btn-outline" onClick={() => navigate("/complaints")}>
+                <button className="btn btn-outline payment-info-btn" onClick={() => navigate("/complaints")}>
                   Report Payment Issue
                 </button>
               </>
@@ -606,6 +791,17 @@ function MaintenanceBills() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .generate-options {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+        .option-btn {
+          flex: 1;
+        }
+      `}</style>
     </div>
   );
 }
