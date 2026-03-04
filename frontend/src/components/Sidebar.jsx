@@ -16,7 +16,7 @@ function Sidebar({ role = "resident" }) {
 
         {role === "resident" && (
           <>
-            <NavLink to="/profile" className="nav-item">
+            <NavLink to="/flats" className="nav-item">
               My Flat
             </NavLink>
 
@@ -46,12 +46,6 @@ function Sidebar({ role = "resident" }) {
             <NavLink to="/users" className="nav-item">
               Users
             </NavLink>
-
-            <NavLink to="/flats" className="nav-item">
-              Flats
-            </NavLink>
-
-            <div className="nav-divider" />
 
             <NavLink to="/maintenance" className="nav-item">
               Maintenance

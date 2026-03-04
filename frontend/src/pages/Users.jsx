@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 function Users() {
   const navigate = useNavigate();
   
-  const [users] = useState([
+  const [users, setUsers] = useState([
     { id: 1, name: "Rajesh Kumar", email: "rajesh@example.com", flat: "A-101", phone: "9876543210", role: "Resident", status: "Active" },
     { id: 2, name: "Priya Sharma", email: "priya@example.com", flat: "B-205", phone: "9876543211", role: "Resident", status: "Active" },
     { id: 3, name: "Amit Patel", email: "amit@example.com", flat: "C-302", phone: "9876543212", role: "Secretary", status: "Active" },
@@ -16,6 +16,15 @@ function Users() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    flat: "",
+    phone: "",
+    role: "Resident",
+    status: "Active"
+  });
 
   const filteredUsers = users.filter(user => {
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
@@ -28,16 +37,38 @@ function Users() {
     return matchesRole && matchesStatus && matchesSearch;
   });
 
-  const totalResidents = users.filter(u => u.role === "Resident").length;
-  const totalCommittee = users.filter(u => u.role !== "Resident").length;
-  const activeUsers = users.filter(u => u.status === "Active").length;
-
-  const handleViewUser = (userId) => {
-    navigate(`/profile?userId=${userId}`);
+  const handleDeleteUser = (userId) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      setUsers(users.filter(user => user.id !== userId));
+      alert("User deleted successfully!");
+    }
   };
 
   const handleAddUser = () => {
-    console.log("Add new user");
+    setShowAddForm(true);
+  };
+
+  const handleInputChange = (e) => {
+    setNewUser({
+      ...newUser,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmitUser = (e) => {
+    e.preventDefault();
+    const newId = Math.max(...users.map(u => u.id), 0) + 1;
+    setUsers([...users, { ...newUser, id: newId }]);
+    setShowAddForm(false);
+    setNewUser({
+      name: "",
+      email: "",
+      flat: "",
+      phone: "",
+      role: "Resident",
+      status: "Active"
+    });
+    alert("User added successfully!");
   };
 
   return (
@@ -49,38 +80,9 @@ function Users() {
         </div>
 
         <div className="header-actions">
-          <button className="btn btn-outline" onClick={() => navigate("/flats")}>
-            View Flats
-          </button>
           <button className="btn btn-primary" onClick={handleAddUser}>
             Add New User
           </button>
-        </div>
-      </section>
-
-      <section className="grid grid-4">
-        <div className="card stat">
-          <h3>Total Users</h3>
-          <h2>{users.length}</h2>
-          <p>All society members</p>
-        </div>
-
-        <div className="card stat">
-          <h3>Residents</h3>
-          <h2>{totalResidents}</h2>
-          <p>Flat owners/tenants</p>
-        </div>
-
-        <div className="card stat">
-          <h3>Committee</h3>
-          <h2>{totalCommittee}</h2>
-          <p>Managing committee</p>
-        </div>
-
-        <div className="card stat">
-          <h3>Active</h3>
-          <h2>{activeUsers}</h2>
-          <p>Currently active</p>
         </div>
       </section>
 
@@ -129,6 +131,112 @@ function Users() {
         </div>
       </section>
 
+      {/* Add User Modal */}
+      {showAddForm && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <h2 className="modal-title">Add New User</h2>
+            <p className="modal-subtitle">
+              Enter user details below
+            </p>
+
+            <form onSubmit={handleSubmitUser}>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="name"
+                  className="input"
+                  placeholder="Full Name"
+                  value={newUser.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <input
+                  type="email"
+                  name="email"
+                  className="input"
+                  placeholder="Email Address"
+                  value={newUser.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="flat"
+                  className="input"
+                  placeholder="Flat Number (e.g., A-101)"
+                  value={newUser.flat}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <input
+                  type="tel"
+                  name="phone"
+                  className="input"
+                  placeholder="Phone Number"
+                  value={newUser.phone}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <select
+                  name="role"
+                  className="input"
+                  value={newUser.role}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="Resident">Resident</option>
+                  <option value="Secretary">Secretary</option>
+                  <option value="Treasurer">Treasurer</option>
+                  <option value="Chairman">Chairman</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <select
+                  name="status"
+                  className="input"
+                  value={newUser.status}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="btn btn-outline modal-btn"
+                  onClick={() => setShowAddForm(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary modal-btn"
+                >
+                  Add User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <section className="card">
         <div className="card-header">
           <h3>All Users ({filteredUsers.length})</h3>
@@ -150,36 +258,36 @@ function Users() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="table-primary">{user.name}</div>
-                    <div className="table-secondary">{user.email}</div>
-                  </td>
-                  <td>
-                    <div className="table-primary">{user.flat}</div>
-                    <div className="table-secondary">Block {user.flat.charAt(0)}</div>
-                  </td>
-                  <td>
-                    <div className="table-primary">{user.phone}</div>
-                  </td>
-                  <td>
-                    <div className="table-primary">{user.role}</div>
-                  </td>
-                  <td>
-                    <div className="table-primary">{user.status}</div>
-                  </td>
-                  <td>
-                    <button 
-                      className="btn btn-outline btn-sm"
-                      onClick={() => handleViewUser(user.id)}
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {filteredUsers.map((user) => (
+    <tr key={user.id}>
+      <td>
+        <div className="table-primary">{user.name}</div>
+        <div className="table-secondary">{user.email}</div>
+      </td>
+      <td>
+        <div className="table-primary">{user.flat}</div>
+        <div className="table-secondary">Block {user.flat?.charAt(0) || 'N/A'}</div>
+      </td>
+      <td>
+        <div className="table-primary">{user.phone}</div>
+      </td>
+      <td>
+        <div className="table-primary">{user.role}</div>
+      </td>
+      <td>
+        <div className="table-primary">{user.status}</div>
+      </td>
+      <td>
+        <button 
+          className="btn btn-delete btn-sm"
+          onClick={() => handleDeleteUser(user.id)}
+        >
+          Delete
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
           </table>
         </div>
 
@@ -188,38 +296,6 @@ function Users() {
             No users found matching your filters
           </div>
         )}
-      </section>
-
-      <section className="grid grid-2">
-        <div className="card compact">
-          <div className="card-header">
-            <h3>Export Data</h3>
-          </div>
-          <p className="card-description">Download user directory for records.</p>
-          <div className="action-buttons">
-            <button className="btn btn-outline btn-sm">
-              Export as CSV
-            </button>
-            <button className="btn btn-outline btn-sm">
-              Print List
-            </button>
-          </div>
-        </div>
-
-        <div className="card compact">
-          <div className="card-header">
-            <h3>Bulk Actions</h3>
-          </div>
-          <p className="card-description">Send notifications or update multiple users.</p>
-          <div className="action-buttons">
-            <button className="btn btn-outline btn-sm">
-              Send Announcement
-            </button>
-            <button className="btn btn-outline btn-sm">
-              Update Status
-            </button>
-          </div>
-        </div>
       </section>
     </div>
   );

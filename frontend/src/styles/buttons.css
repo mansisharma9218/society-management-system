@@ -34,3 +34,38 @@
   background: var(--danger);
   color: #ffffff;
 }
+
+/* ===== DELETE BUTTON ===== */
+.btn-delete {
+  background: var(--btn-delete-bg);
+  color: var(--btn-delete-text);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-delete:hover {
+  background: var(--btn-delete-hover);
+}
+
+.btn-delete.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* ===== MODAL BUTTONS ===== */
+.modal-btn {
+  flex: 1;
+}
+
+.btn-outline.modal-btn {
+  border: 1px solid var(--border-color);
+}
+
+.btn-outline.modal-btn:hover {
+  background: var(--bg-hover);
+}

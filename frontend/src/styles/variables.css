@@ -38,4 +38,14 @@
   --transition: 0.25s ease;
 
   --font-main: 'Inter', system-ui, -apple-system;
+
+  /* Modal & Delete Button */
+  --modal-overlay: rgba(0, 0, 0, 0.85);
+  --modal-bg: #1a1a2a;
+  --modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --btn-delete-bg: #dc2626;
+  --btn-delete-hover: #b91c1c;
+  --btn-delete-text: #ffffff;
+  --border-color: rgba(255, 255, 255, 0.12);
+  --bg-hover: rgba(255, 255, 255, 0.08);
 }
