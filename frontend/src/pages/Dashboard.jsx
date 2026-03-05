@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../viewmodels/useAuthStore";
 import { useApplicationStore } from "../viewmodels/useApplicationStore";
+import { useAnnouncementStore } from "../viewmodels/useAnnouncementStore";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -9,11 +10,18 @@ function Dashboard() {
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
   const { applications, fetchApplications } = useApplicationStore();
+  const { announcements, fetchAnnouncements } = useAnnouncementStore();
 
-  // Fetch pending count for admin once on mount
+  // Fetch data on mount
   useEffect(() => {
+    fetchAnnouncements();
     if (isAdmin) fetchApplications();
   }, [isAdmin]);
+
+  // Up to 3 active (non-expired) announcements for the widget
+  const recentAnnouncements = announcements
+    .filter((a) => !a.expiryDate || new Date(a.expiryDate) >= new Date())
+    .slice(0, 3);
 
   const pendingCount = applications.length;
   // Show up to 3 most recent in the dashboard widget
@@ -138,11 +146,22 @@ function Dashboard() {
               View All
             </button>
           </div>
-          <ul className="list">
-            <li>Water supply maintenance on Friday</li>
-            <li>Annual general meeting this Sunday</li>
-            <li>Parking rules updated</li>
-          </ul>
+          {recentAnnouncements.length === 0 ? (
+            <p style={{ color: "var(--text-muted)", padding: "12px 0" }}>
+              No announcements yet.
+            </p>
+          ) : (
+            <ul className="list">
+              {recentAnnouncements.map((a) => (
+                <li key={a._id}>
+                  <strong>{a.title}</strong>
+                  {a.message.length > 60
+                    ? " — " + a.message.slice(0, 60) + "…"
+                    : " — " + a.message}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {isAdmin ? (
