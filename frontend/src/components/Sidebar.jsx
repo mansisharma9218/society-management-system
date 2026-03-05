@@ -20,6 +20,9 @@ function Sidebar({ role = "resident" }) {
               My Flat
             </NavLink>
 
+            <NavLink to="/announcements" className="nav-item">
+              Announcements
+            </NavLink>
 
             <NavLink to="/maintenance" className="nav-item">
               Maintenance Bills
@@ -53,6 +56,10 @@ function Sidebar({ role = "resident" }) {
 
             <NavLink to="/users" className="nav-item">
               Users
+            </NavLink>
+
+            <NavLink to="/announcements" className="nav-item">
+              Announcements
             </NavLink>
 
             <NavLink to="/maintenance" className="nav-item">

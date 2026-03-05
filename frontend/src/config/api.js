@@ -26,4 +26,8 @@ export const API_ENDPOINTS = {
     assign:   (flatId) =>   `${BASE_URL}/resiflow/flats/${flatId}/assign`,
     unassign: (flatId) =>   `${BASE_URL}/resiflow/flats/${flatId}/unassign`,
   },
+  announcements: {
+    list:   `${BASE_URL}/resiflow/announcements`,
+    create: `${BASE_URL}/resiflow/announcements`,
+  },
 };
