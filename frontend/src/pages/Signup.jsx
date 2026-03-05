@@ -160,6 +160,16 @@ function Signup() {
                 Login here
               </span>
             </p>
+            <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
+              Are you a resident?{" "}
+              <span
+                className="auth-link"
+                onClick={() => navigate("/apply")}
+                style={{ color: "var(--primary)", cursor: "pointer" }}
+              >
+                Apply to join your society
+              </span>
+            </p>
           </div>
         </form>
       </div>

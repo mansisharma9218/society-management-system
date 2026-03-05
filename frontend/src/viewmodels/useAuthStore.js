@@ -44,7 +44,7 @@ function clearStorage() {
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   token: null,
   user: null,
   isLoggedIn: false,
@@ -93,7 +93,18 @@ export const useAuthStore = create((set) => ({
   },
 
   // ── Logout ─────────────────────────────────────────────────────────────────
-  logout() {
+  // Blacklists the token on the server, then wipes local state.
+  // Fire-and-forget the API call — even if it fails we still clear locally
+  // so the user is never stuck in a broken logged-in state.
+  async logout() {
+    const token = get().token;
+    if (token) {
+      try {
+        await AuthService.logout(token);
+      } catch {
+        // Network error or already blacklisted — safe to ignore.
+      }
+    }
     clearStorage();
     set({ token: null, user: null, isLoggedIn: false, error: null });
   },

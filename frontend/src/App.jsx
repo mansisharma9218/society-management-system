@@ -21,6 +21,8 @@ import Users from "./pages/Users";
 import Flats from "./pages/Flats";
 import Facilities from "./pages/Facilities";
 
+import Applications from "./pages/Applications";
+import Apply from "./pages/Apply";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -38,6 +40,7 @@ function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/apply" element={<Apply />} />
 
         {isLoggedIn ? (
           <Route element={<Layout role={role} onLogout={logout} />}>
@@ -49,6 +52,8 @@ function App() {
             <Route path="/maintenance" element={<MaintenanceBills />} />
             <Route path="/complaints" element={<Complaints />} />
             <Route path="/bookings" element={<Bookings />} />
+
+            <Route path="/applications" element={<Applications />} />
 
             <Route path="/users" element={<Users />} />
             <Route path="/flats" element={<Flats />} />

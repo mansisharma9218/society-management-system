@@ -93,6 +93,15 @@ function Login() {
               Register here
             </span>
           </p>
+          <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
+            Resident applying to join?{" "}
+            <span
+              onClick={() => navigate("/apply")}
+              style={{ color: "var(--primary)", cursor: "pointer" }}
+            >
+              Submit application
+            </span>
+          </p>
         </div>
       </div>
     </div>

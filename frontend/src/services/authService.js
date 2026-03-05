@@ -30,7 +30,20 @@ export class AuthService {
     });
     return AuthService.#handleResponse(res); // { token }
   }
-
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  // POST /resiflow/auth/logout  (requires Bearer token)
+  // Blacklists the token server-side so it can never be reused.
+  // Response : { msg }
+  static async logout(token) {
+    const res = await fetch(API_ENDPOINTS.auth.logout, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return AuthService.#handleResponse(res);
+  }
   // ─── Register Society ─────────────────────────────────────────────────────
   // POST /auth/register-society
   // Payload  : { societyName, name, email, phone, password }
