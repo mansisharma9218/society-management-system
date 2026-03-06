@@ -29,11 +29,11 @@ export class FlatService {
   }
 
   /** POST /resiflow/flats — admin only */
-  static async createFlat(token, { flatNumber, block, area, occupancyType }) {
+  static async createFlat(token, { flatNumber, block, areaSqFt, occupancyType }) {
     const res = await fetch(API_ENDPOINTS.flats.create, {
       method: "POST",
       headers: FlatService.#authHeaders(token),
-      body: JSON.stringify({ flatNumber, block, area, occupancyType }),
+      body: JSON.stringify({ flatNumber, block, areaSqFt, occupancyType }),
     });
     return FlatService.#handleResponse(res);
   }
@@ -60,6 +60,25 @@ export class FlatService {
   static async unassignFlat(token, flatId) {
     const res = await fetch(API_ENDPOINTS.flats.unassign(flatId), {
       method: "PATCH",
+      headers: FlatService.#authHeaders(token),
+    });
+    return FlatService.#handleResponse(res);
+  }
+
+  /** PUT /resiflow/flats/:flatId — admin edits flat details */
+  static async updateFlat(token, flatId, { block, flatNumber, areaSqFt, occupancyType }) {
+    const res = await fetch(API_ENDPOINTS.flats.update(flatId), {
+      method: "PUT",
+      headers: FlatService.#authHeaders(token),
+      body: JSON.stringify({ block, flatNumber, areaSqFt, occupancyType }),
+    });
+    return FlatService.#handleResponse(res);
+  }
+
+  /** DELETE /resiflow/flats/:flatId — admin deletes a vacant flat */
+  static async deleteFlat(token, flatId) {
+    const res = await fetch(API_ENDPOINTS.flats.delete(flatId), {
+      method: "DELETE",
       headers: FlatService.#authHeaders(token),
     });
     return FlatService.#handleResponse(res);
