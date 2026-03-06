@@ -19,6 +19,7 @@
  */
 import { create } from "zustand";
 import { AuthService } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 // ─── JWT decoder (no extra library needed) ───────────────────────────────────
 function decodeJwt(token) {
@@ -48,6 +49,7 @@ export const useAuthStore = create((set, get) => ({
   token: null,
   user: null,
   isLoggedIn: false,
+  accountInactive: false,   // true when backend returns 403 "not yet activated"
   loading: false,
   error: null,
 
@@ -62,6 +64,29 @@ export const useAuthStore = create((set, get) => ({
       }
       // Token present but un-decodable → clear it
       clearStorage();
+    }
+  },
+
+  // ── Check if account is inactive (flat not yet assigned) ──────────────────
+  // Calls the profile endpoint; a 403 means the resident has no flat yet.
+  // Safe to call for any role — admins always return 200.
+  async checkActivation() {
+    const token = get().token;
+    if (!token) return;
+    try {
+      const res = await fetch(API_ENDPOINTS.profile.get, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        if ((data.msg ?? "").toLowerCase().includes("not yet activated")) {
+          set({ accountInactive: true });
+          return;
+        }
+      }
+      set({ accountInactive: false });
+    } catch {
+      // Network error – leave accountInactive as-is
     }
   },
 
@@ -106,7 +131,7 @@ export const useAuthStore = create((set, get) => ({
       }
     }
     clearStorage();
-    set({ token: null, user: null, isLoggedIn: false, error: null });
+    set({ token: null, user: null, isLoggedIn: false, error: null, accountInactive: false });
   },
 
   // ── Utility ────────────────────────────────────────────────────────────────

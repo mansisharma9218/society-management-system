@@ -26,6 +26,8 @@ function AdminFlats() {
     createFlat,
     assignFlat,
     unassignFlat,
+    updateFlat,
+    deleteFlat,
     clearError,
   } = useFlatStore();
 
@@ -33,13 +35,17 @@ function AdminFlats() {
   const [form, setForm] = useState({
     flatNumber: "",
     block: "",
-    area: "",
+    areaSqFt: "",
     occupancyType: "OWNER",
   });
 
   // Which flat row is showing the assign panel
   const [assigningFlatId, setAssigningFlatId] = useState(null);
   const [selectedUser, setSelectedUser] = useState("");
+
+  // Inline edit state
+  const [editingFlatId, setEditingFlatId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     fetchFlats();
@@ -51,11 +57,11 @@ function AdminFlats() {
     const ok = await createFlat({
       flatNumber: form.flatNumber.trim(),
       block: form.block.trim(),
-      area: Number(form.area),
+      areaSqFt: Number(form.areaSqFt),
       occupancyType: form.occupancyType,
     });
     if (ok) {
-      setForm({ flatNumber: "", block: "", area: "", occupancyType: "OWNER" });
+      setForm({ flatNumber: "", block: "", areaSqFt: "", occupancyType: "OWNER" });
       setShowCreate(false);
     }
   };
@@ -74,6 +80,32 @@ function AdminFlats() {
   const handleUnassign = async (flatId) => {
     const ok = await unassignFlat(flatId);
     if (ok) fetchUnassignedResidents();
+  };
+
+  const handleEditOpen = (flat) => {
+    setEditingFlatId(flat._id);
+    setAssigningFlatId(null);
+    setEditForm({
+      flatNumber: flat.flatNumber ?? "",
+      block: flat.block ?? "",
+      areaSqFt: flat.areaSqFt ?? "",
+      occupancyType: flat.occupancyType ?? "OWNER",
+    });
+  };
+
+  const handleEditSave = async (flatId) => {
+    const ok = await updateFlat(flatId, {
+      flatNumber: editForm.flatNumber.trim(),
+      block: editForm.block.trim(),
+      areaSqFt: editForm.areaSqFt !== "" ? Number(editForm.areaSqFt) : undefined,
+      occupancyType: editForm.occupancyType,
+    });
+    if (ok) setEditingFlatId(null);
+  };
+
+  const handleDelete = async (flatId) => {
+    if (!window.confirm("Delete this flat? This cannot be undone.")) return;
+    await deleteFlat(flatId);
   };
 
   const totalFlats = flats.length;
@@ -140,8 +172,8 @@ function AdminFlats() {
               <input
                 className="form-input"
                 type="number"
-                value={form.area}
-                onChange={(e) => setForm((f) => ({ ...f, area: e.target.value }))}
+                value={form.areaSqFt}
+                onChange={(e) => setForm((f) => ({ ...f, areaSqFt: e.target.value }))}
                 placeholder="e.g. 1200"
               />
             </div>
@@ -189,7 +221,7 @@ function AdminFlats() {
                   <tr key={flat._id}>
                     <td>{flat.block || "—"}</td>
                     <td><strong>{flat.flatNumber}</strong></td>
-                    <td>{flat.area ? `${flat.area} sq ft` : "—"}</td>
+                    <td>{flat.areaSqFt ? `${flat.areaSqFt} sq ft` : "—"}</td>
                     <td>{flat.occupancyType ?? "—"}</td>
                     <td>
                       {flat.occupant ? (
@@ -219,14 +251,90 @@ function AdminFlats() {
                             setAssigningFlatId(
                               assigningFlatId === flat._id ? null : flat._id
                             );
+                            setEditingFlatId(null);
                             setSelectedUser("");
                           }}
                         >
                           Assign
                         </button>
                       )}
+                      {" "}
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() =>
+                          editingFlatId === flat._id
+                            ? setEditingFlatId(null)
+                            : handleEditOpen(flat)
+                        }
+                      >
+                        {editingFlatId === flat._id ? "Cancel" : "Edit"}
+                      </button>
+                      {" "}
+                      {!flat.occupant && (
+                        <button
+                          className="btn btn-danger btn-sm"
+                          disabled={saving}
+                          onClick={() => handleDelete(flat._id)}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
+
+                  {/* Inline Edit Row */}
+                  {editingFlatId === flat._id && (
+                    <tr key={`${flat._id}-edit`} style={{ background: "var(--color-surface-alt, #f9f9f9)" }}>
+                      <td colSpan={6} style={{ padding: "0.75rem 1rem" }}>
+                        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                          <input
+                            className="form-input"
+                            style={{ maxWidth: 90 }}
+                            placeholder="Block"
+                            value={editForm.block}
+                            onChange={(e) => setEditForm((f) => ({ ...f, block: e.target.value }))}
+                          />
+                          <input
+                            className="form-input"
+                            style={{ maxWidth: 90 }}
+                            placeholder="Flat No."
+                            value={editForm.flatNumber}
+                            onChange={(e) => setEditForm((f) => ({ ...f, flatNumber: e.target.value }))}
+                          />
+                          <input
+                            className="form-input"
+                            style={{ maxWidth: 110 }}
+                            type="number"
+                            placeholder="Area (sq ft)"
+                            value={editForm.areaSqFt}
+                            onChange={(e) => setEditForm((f) => ({ ...f, areaSqFt: e.target.value }))}
+                          />
+                          <select
+                            className="form-input"
+                            style={{ maxWidth: 120 }}
+                            value={editForm.occupancyType}
+                            onChange={(e) => setEditForm((f) => ({ ...f, occupancyType: e.target.value }))}
+                          >
+                            <option value="OWNER">Owner</option>
+                            <option value="RENTER">Renter</option>
+                          </select>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            disabled={saving}
+                            onClick={() => handleEditSave(flat._id)}
+                          >
+                            {saving ? "Saving…" : "Save"}
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setEditingFlatId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
 
                   {/* Inline Assign Panel */}
                   {assigningFlatId === flat._id && (
@@ -309,7 +417,7 @@ function ResidentFlat() {
           <section className="grid grid-4">
             <StatCard label="Flat Number" value={flat.flatNumber ?? "—"} accent />
             <StatCard label="Block" value={flat.block ?? "—"} />
-            <StatCard label="Area" value={flat.area ? `${flat.area} sq ft` : "—"} />
+            <StatCard label="Area" value={flat.areaSqFt ? `${flat.areaSqFt} sq ft` : "—"} />
             <StatCard label="Occupancy Type" value={flat.occupancyType ?? "—"} />
           </section>
 

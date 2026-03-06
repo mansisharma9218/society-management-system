@@ -26,12 +26,34 @@ import Apply from "./pages/Apply";
 import NotFound from "./pages/NotFound";
 
 function App() {
-  const { init, isLoggedIn, user, logout } = useAuthStore();
+  const { init, isLoggedIn, user, logout, accountInactive, checkActivation } = useAuthStore();
 
   // Rehydrate auth state from localStorage on first render
   useEffect(() => { init(); }, []);
 
+  // After login/rehydrate, check if resident account is inactive (no flat yet)
+  useEffect(() => {
+    if (isLoggedIn) checkActivation();
+  }, [isLoggedIn]);
+
   const role = (user?.role ?? "resident").toLowerCase();
+
+  // Inactive resident: logged in but no flat assigned yet
+  if (isLoggedIn && accountInactive) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-bg, #f5f5f5)" }}>
+        <div className="card" style={{ maxWidth: 420, width: "100%", textAlign: "center", padding: "2.5rem" }}>
+          <h2 style={{ marginBottom: "0.75rem" }}>Account Pending Activation</h2>
+          <p style={{ color: "var(--color-muted, #888)", marginBottom: "1.5rem", lineHeight: 1.6 }}>
+            Your application has been accepted. Once the admin assigns a flat to your account, you will be able to log in and access the portal.
+          </p>
+          <button className="btn btn-outline" onClick={logout}>
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>

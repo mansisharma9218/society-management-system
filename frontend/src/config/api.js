@@ -25,6 +25,8 @@ export const API_ENDPOINTS = {
     unassignedResidents:    `${BASE_URL}/resiflow/flats/unassigned-residents`,
     assign:   (flatId) =>   `${BASE_URL}/resiflow/flats/${flatId}/assign`,
     unassign: (flatId) =>   `${BASE_URL}/resiflow/flats/${flatId}/unassign`,
+    update:   (flatId) =>   `${BASE_URL}/resiflow/flats/${flatId}`,
+    delete:   (flatId) =>   `${BASE_URL}/resiflow/flats/${flatId}`,
   },
   announcements: {
     list:   `${BASE_URL}/resiflow/announcements`,

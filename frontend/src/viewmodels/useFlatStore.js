@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { FlatService } from "../services/flatService";
 import { useAuthStore } from "./useAuthStore";
 
-export const useFlatStore = create((set) => ({
+export const useFlatStore = create((set, get) => ({
   // ─── State ─────────────────────────────────────────────────────────────────
   flats: [],
   unassignedResidents: [],
@@ -55,17 +55,11 @@ export const useFlatStore = create((set) => ({
     const token = useAuthStore.getState().token;
     set({ saving: true, error: null });
     try {
-      const result = await FlatService.assignFlat(token, flatId, userId);
-      const updatedFlat = result.flat ?? result;
-      set((state) => ({
-        flats: state.flats.map((f) =>
-          f._id === flatId ? { ...f, ...updatedFlat } : f
-        ),
-        unassignedResidents: state.unassignedResidents.filter(
-          (r) => r._id !== userId
-        ),
-        saving: false,
-      }));
+      await FlatService.assignFlat(token, flatId, userId);
+      // Re-fetch both to get accurate server state (isActive toggled, occupant set)
+      await get().fetchFlats();
+      await get().fetchUnassignedResidents();
+      set({ saving: false });
       return true;
     } catch (err) {
       set({ error: err.message, saving: false });
@@ -77,12 +71,43 @@ export const useFlatStore = create((set) => ({
     const token = useAuthStore.getState().token;
     set({ saving: true, error: null });
     try {
-      const result = await FlatService.unassignFlat(token, flatId);
-      const updatedFlat = result.flat ?? result;
+      await FlatService.unassignFlat(token, flatId);
+      // Re-fetch both so the unassigned resident reappears in the unassigned list
+      await get().fetchFlats();
+      await get().fetchUnassignedResidents();
+      set({ saving: false });
+      return true;
+    } catch (err) {
+      set({ error: err.message, saving: false });
+      return false;
+    }
+  },
+
+  updateFlat: async (flatId, fields) => {
+    const token = useAuthStore.getState().token;
+    set({ saving: true, error: null });
+    try {
+      const updated = await FlatService.updateFlat(token, flatId, fields);
       set((state) => ({
         flats: state.flats.map((f) =>
-          f._id === flatId ? { ...f, ...updatedFlat, occupant: null } : f
+          f._id === flatId ? { ...f, ...updated } : f
         ),
+        saving: false,
+      }));
+      return true;
+    } catch (err) {
+      set({ error: err.message, saving: false });
+      return false;
+    }
+  },
+
+  deleteFlat: async (flatId) => {
+    const token = useAuthStore.getState().token;
+    set({ saving: true, error: null });
+    try {
+      await FlatService.deleteFlat(token, flatId);
+      set((state) => ({
+        flats: state.flats.filter((f) => f._id !== flatId),
         saving: false,
       }));
       return true;
