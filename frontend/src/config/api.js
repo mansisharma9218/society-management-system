@@ -1,6 +1,6 @@
 // ─── Domain / Base URL ────────────────────────────────────────────────────────
 // Change this one constant to point to any environment (dev, staging, prod).
-export const BASE_URL = "http://localhost:3000";
+export const BASE_URL = "http://16.171.166.166";
 
 // ─── Auth endpoints ───────────────────────────────────────────────────────────
 export const API_ENDPOINTS = {
