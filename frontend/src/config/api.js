@@ -43,4 +43,21 @@ export const API_ENDPOINTS = {
     update: (id) =>   `${BASE_URL}/resiflow/facilities/${id}`,
     delete: (id) =>   `${BASE_URL}/resiflow/facilities/${id}`,
   },
+  bookings: {
+    list:              `${BASE_URL}/resiflow/bookings`,
+    create:            `${BASE_URL}/resiflow/bookings`,
+    approve: (id) =>   `${BASE_URL}/resiflow/bookings/${id}/approve`,
+    reject:  (id) =>   `${BASE_URL}/resiflow/bookings/${id}/reject`,
+  },
+  payments: {
+    key:                      `${BASE_URL}/resiflow/payments/key`,
+    list:                     `${BASE_URL}/resiflow/payments`,
+    createOrder: (billId) =>  `${BASE_URL}/resiflow/payments/create-order/${billId}`,
+    verify:                   `${BASE_URL}/resiflow/payments/verify`,
+  },
+  billing: {
+    my:       `${BASE_URL}/resiflow/billing/my`,
+    all:      `${BASE_URL}/resiflow/billing/all`,
+    generate: `${BASE_URL}/resiflow/billing/generate`,
+  },
 };

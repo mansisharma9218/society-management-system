@@ -1,446 +1,198 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../viewmodels/useAuthStore";
+import { useMaintenanceBillStore } from "../viewmodels/useMaintenanceBillStore";
+import { usePaymentStore } from "../viewmodels/usePaymentStore";
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const MONTH_NAMES = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
+function monthLabel(m, y) { return `${MONTH_NAMES[(m ?? 1) - 1]} ${y}`; }
+function flatLabel(flatId) {
+  if (!flatId) return "—";
+  return `${flatId.block ?? ""}${flatId.flatNumber ? `-${flatId.flatNumber}` : ""}`;
+}
+function formatDate(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+function billStatus(bill) {
+  if (bill.status === "PAID") return "paid";
+  if (bill.dueDate && new Date(bill.dueDate) < new Date()) return "overdue";
+  return "pending";
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 function MaintenanceBills() {
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterMonth, setFilterMonth] = useState("all");
-  const [selectedBill, setSelectedBill] = useState(null);
-  const [role, setRole] = useState("resident");
-  const [bills, setBills] = useState([]);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [showGenerateBillModal, setShowGenerateBillModal] = useState(false);
-  const [generateForAll, setGenerateForAll] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { bills, loading, saving, error, fetchBills, generateBills, clearError } = useMaintenanceBillStore();
+  const { payBill, paying } = usePaymentStore();
 
-  // Generate a unique bill ID
-  const generateBillId = () => {
-    const year = new Date().getFullYear();
-    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `BILL-${year}-${randomNum}`;
-  };
+  const isAdmin = user?.role === "ADMIN";
 
-  // Initialize auth and fetch bills
-  useEffect(() => {
-    const initializeData = () => {
-      const userData = localStorage.getItem("user");
-      let userRole = "resident";
-      
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          userRole = (user.role || "resident").toLowerCase();
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-        }
-      }
-      
-      setRole(userRole);
-      
-      // Get stored bills or use sample data
-      const storedBills = localStorage.getItem("maintenanceBills");
-      let initialBills = [];
-      
-      if (storedBills) {
-        try {
-          initialBills = JSON.parse(storedBills);
-        } catch (error) {
-          console.error("Error parsing stored bills:", error);
-        }
-      } else {
-        // Sample data exactly as shown in the image
-        initialBills = [
-          {
-            id: "BILL-2025-001",
-            month: "January 2025",
-            amount: 4500,
-            dueDate: "Jan 15, 2025",
-            status: "paid",
-            paidDate: "Jan 10, 2025",
-            transactionId: "TXN123456789",
-            flat: "B-203",
-            resident: "John Doe",
-            contact: "john@email.com"
-          },
-          {
-            id: "BILL-2025-002",
-            month: "February 2025",
-            amount: 4500,
-            dueDate: "Feb 15, 2025",
-            status: "pending",
-            paidDate: null,
-            transactionId: null,
-            flat: "A-101",
-            resident: "Jane Smith",
-            contact: "jane@email.com"
-          },
-          {
-            id: "BILL-2025-003",
-            month: "March 2025",
-            amount: 5000,
-            dueDate: "Mar 15, 2025",
-            status: "overdue",
-            paidDate: null,
-            transactionId: null,
-            flat: "C-305",
-            resident: "Robert Johnson",
-            contact: "robert@email.com"
-          },
-          {
-            id: "BILL-2025-004",
-            month: "January 2025",
-            amount: 4500,
-            dueDate: "Jan 15, 2025",
-            status: "paid",
-            paidDate: "Jan 12, 2025",
-            transactionId: "TXN987654321",
-            flat: "D-412",
-            resident: "Sarah Williams",
-            contact: "sarah@email.com"
-          }
-        ];
-        localStorage.setItem("maintenanceBills", JSON.stringify(initialBills));
-      }
-      
-      if (userRole === "admin") {
-        setBills(initialBills);
-      } else {
-        // Filter bills for the resident (using B-203 as example)
-        const residentBills = initialBills.filter(bill => bill.flat === "B-203");
-        setBills(residentBills.length ? residentBills : [
-          {
-            id: "BILL-2025-001",
-            month: "January 2025",
-            amount: 4500,
-            dueDate: "Jan 15, 2025",
-            status: "paid",
-            paidDate: "Jan 10, 2025",
-            transactionId: "TXN123456789",
-            flat: "B-203",
-            resident: "John Doe",
-            contact: "john@email.com"
-          },
-          {
-            id: "BILL-2025-002",
-            month: "February 2025",
-            amount: 4500,
-            dueDate: "Feb 15, 2025",
-            status: "pending",
-            paidDate: null,
-            transactionId: null,
-            flat: "B-203",
-            resident: "John Doe",
-            contact: "john@email.com"
-          }
-        ]);
-      }
-      
-      setIsInitialized(true);
-    };
-    
-    initializeData();
-  }, []);
+  // Filters
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterYear,   setFilterYear]   = useState("all");
+  const [filterMonth,  setFilterMonth]  = useState("all");
 
-  const months = [
-    "January 2026", "February 2026", "March 2026", "April 2026",
-    "May 2026", "June 2026", "July 2026", "August 2026",
-    "September 2026", "October 2026", "November 2026", "December 2026"
-  ];
+  // Expanded row
+  const [selectedBillId, setSelectedBillId] = useState(null);
 
-  const flats = [
-    { flat: "A-101", resident: "Jane Smith", contact: "jane@email.com" },
-    { flat: "B-203", resident: "John Doe", contact: "john@email.com" },
-    { flat: "C-305", resident: "Robert Johnson", contact: "robert@email.com" },
-    { flat: "D-412", resident: "Sarah Williams", contact: "sarah@email.com" }
-  ];
+  // Generate modal
+  const [showGenModal, setShowGenModal] = useState(false);
+  const [genMonth,     setGenMonth]     = useState(new Date().getMonth() + 1);
+  const [genYear,      setGenYear]      = useState(new Date().getFullYear());
+  const [genResult,    setGenResult]    = useState(null);
 
-  const filteredBills = bills.filter(bill => {
-    const statusMatch = filterStatus === "all" || bill.status === filterStatus;
-    const monthMatch = filterMonth === "all" || bill.month === filterMonth;
-    return statusMatch && monthMatch;
+  useEffect(() => { fetchBills(); }, []);
+
+  // ── Derived data ─────────────────────────────────────────────────────────────
+  const enriched = bills.map((b) => ({ ...b, _status: billStatus(b) }));
+  const yearOptions = [...new Set(bills.map((b) => b.year))].sort((a, z) => z - a);
+
+  const filtered = enriched.filter((b) => {
+    const s = filterStatus === "all" || b._status === filterStatus;
+    const y = filterYear   === "all" || String(b.year)  === filterYear;
+    const m = filterMonth  === "all" || String(b.month) === filterMonth;
+    return s && y && m;
   });
 
-  // Calculate totals
-  const calculateTotals = () => {
-    const totalAmount = filteredBills.reduce((sum, bill) => sum + bill.amount, 0);
-    const paidAmount = filteredBills
-      .filter(bill => bill.status === "paid")
-      .reduce((sum, bill) => sum + bill.amount, 0);
-    const pendingAmount = filteredBills
-      .filter(bill => bill.status !== "paid")
-      .reduce((sum, bill) => sum + bill.amount, 0);
-    
-    return {
-      totalAmount,
-      paidAmount,
-      pendingAmount,
-      paidCount: filteredBills.filter(b => b.status === "paid").length,
-      pendingCount: filteredBills.filter(b => b.status !== "paid").length
-    };
+  const totals = {
+    totalAmount:   filtered.reduce((s, b) => s + (b.amount ?? 0), 0),
+    paidAmount:    filtered.filter((b) => b._status === "paid").reduce((s, b) => s + b.amount, 0),
+    pendingAmount: filtered.filter((b) => b._status !== "paid").reduce((s, b) => s + b.amount, 0),
+    paidCount:     filtered.filter((b) => b._status === "paid").length,
+    pendingCount:  filtered.filter((b) => b._status !== "paid").length,
   };
 
-  const totals = calculateTotals();
-
-  // Function to update bills and localStorage
-  const updateBills = (updatedBills) => {
-    setBills(updatedBills);
-    localStorage.setItem("maintenanceBills", JSON.stringify(updatedBills));
+  // ── Actions ──────────────────────────────────────────────────────────────────
+  const handlePayNow = (bill) => {
+    payBill(bill._id, {
+      prefill:   { name: user?.name, email: user?.email, contact: user?.phone },
+      billLabel: `Maintenance – ${monthLabel(bill.month, bill.year)}`,
+      onSuccess: () => fetchBills(),
+      onFailure: (msg) => alert(msg),
+    });
   };
 
-  const handlePayNow = (billId) => {
-    if (role === "resident") {
-      // Mark as paid for resident demo
-      const updatedBills = bills.map(bill => 
-        bill.id === billId 
-          ? { 
-              ...bill, 
-              status: "paid", 
-              paidDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).replace(',', ','),
-              transactionId: `TXN${Math.floor(Math.random() * 1000000000)}`
-            }
-          : bill
-      );
-      updateBills(updatedBills);
-      alert(`Payment completed for bill ${billId}`);
-    } else {
-      alert(`Admin: View payment details for ${billId}`);
-    }
-  };
-
-  const handleDownloadInvoice = (billId) => {
-    alert(`Downloading invoice for ${billId}`);
-  };
-
-  const handleViewDetails = (bill) => {
-    setSelectedBill(selectedBill?.id === bill.id ? null : bill);
-  };
-
-  const handleGenerateBill = () => {
-    setShowGenerateBillModal(true);
-    setGenerateForAll(false);
-  };
-
-  const handleGenerateForAll = () => {
-    setGenerateForAll(true);
-  };
-
-  const handleGenerateForSingle = () => {
-    setGenerateForAll(false);
-  };
-
-  const handleConfirmGenerateBill = () => {
-    // Get form values
-    const monthSelect = document.querySelector('.modal-container select');
-    const amountInput = document.querySelector('.modal-container input[type="number"]');
-    const dueDateInput = document.querySelectorAll('.modal-container input[type="text"]')[0];
-    const flatSelect = document.querySelector('.modal-container .flat-select');
-    
-    const month = monthSelect ? monthSelect.value : "April 2026";
-    const amount = amountInput ? parseInt(amountInput.value) : 4500;
-    const dueDate = dueDateInput ? dueDateInput.value : "Apr 15, 2026";
-    
-    let newBills = [];
-    
-    if (generateForAll) {
-      // Generate for all flats
-      newBills = flats.map(flat => ({
-        id: generateBillId(),
-        month: month,
-        amount: amount,
-        dueDate: dueDate,
-        status: "pending",
-        paidDate: null,
-        transactionId: null,
-        flat: flat.flat,
-        resident: flat.resident,
-        contact: flat.contact
-      }));
-      alert(`Generated ${newBills.length} new maintenance bills for all flats`);
-    } else {
-      // Generate for single flat
-      const selectedFlat = flatSelect ? flatSelect.value : "B-203";
-      const flatData = flats.find(f => f.flat === selectedFlat) || flats[1];
-      
-      newBills = [{
-        id: generateBillId(),
-        month: month,
-        amount: amount,
-        dueDate: dueDate,
-        status: "pending",
-        paidDate: null,
-        transactionId: null,
-        flat: flatData.flat,
-        resident: flatData.resident,
-        contact: flatData.contact
-      }];
-      alert(`Generated new maintenance bill for ${flatData.flat} - ${flatData.resident}`);
-    }
-    
-    // Add new bills to existing bills
-    const updatedBills = [...bills, ...newBills];
-    updateBills(updatedBills);
-    
-    setShowGenerateBillModal(false);
-  };
-
-  const handleSendReminder = (billId, resident) => {
-    alert(`Sending payment reminder to ${resident} for bill ${billId}`);
-  };
-
-  const handleMarkAsPaid = (billId) => {
-    const updatedBills = bills.map(bill => 
-      bill.id === billId 
-        ? { 
-            ...bill, 
-            status: "paid", 
-            paidDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).replace(',', ','),
-            transactionId: `TXN${Math.floor(Math.random() * 1000000000)}`
-          }
-        : bill
-    );
-    updateBills(updatedBills);
-    
-    // Close expanded details if open for this bill
-    if (selectedBill?.id === billId) {
-      setSelectedBill(null);
-    }
-    
-    alert(`Bill ${billId} marked as paid successfully`);
+  const handleConfirmGenerate = async () => {
+    setGenResult(null);
+    const result = await generateBills({ month: genMonth, year: genYear });
+    if (result) setGenResult(result);
   };
 
   const handleExportReport = () => {
-    // Create CSV content
-    let csvContent = "Bill ID,Month,Amount,Due Date,Status,Paid Date,Transaction ID,Flat,Resident,Contact\n";
-    
-    filteredBills.forEach(bill => {
-      csvContent += `"${bill.id}","${bill.month}",${bill.amount},"${bill.dueDate}","${bill.status}","${bill.paidDate || 'N/A'}","${bill.transactionId || 'N/A'}","${bill.flat}","${bill.resident}","${bill.contact}"\n`;
+    let csv = "Bill ID,Flat,Month,Year,Amount,Due Date,Status\n";
+    filtered.forEach((b) => {
+      csv += `"${b._id}","${flatLabel(b.flatId)}",${b.month},${b.year},${b.amount},"${formatDate(b.dueDate)}","${b._status}"\n`;
     });
-
-    // Add summary section
-    csvContent += "\n\nSUMMARY\n";
-    csvContent += `Total Bills,${filteredBills.length}\n`;
-    csvContent += `Total Amount,${totals.totalAmount}\n`;
-    csvContent += `Paid Amount,${totals.paidAmount}\n`;
-    csvContent += `Pending Amount,${totals.pendingAmount}\n`;
-    csvContent += `Paid Count,${totals.paidCount}\n`;
-    csvContent += `Pending Count,${totals.pendingCount}\n`;
-    csvContent += `Collection Rate,${totals.totalAmount > 0 ? Math.round((totals.paidAmount / totals.totalAmount) * 100) : 0}%\n`;
-    csvContent += `Filters Applied,Status: ${filterStatus}, Month: ${filterMonth}\n`;
-    csvContent += `Generated On,${new Date().toLocaleString()}\n`;
-
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `maintenance-report-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    csv += `\n\nSUMMARY\nTotal Bills,${filtered.length}\nTotal Amount,${totals.totalAmount}\nPaid,${totals.paidAmount}\nPending,${totals.pendingAmount}\nGenerated,${new Date().toLocaleString()}\n`;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url;
+    a.download = `maintenance-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  if (!isInitialized) {
-    return (
-      <div className="page">
-        <div className="card">
-          <div className="empty-state">
-            <p>Loading maintenance bills...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="page">
-      {/* GENERATE BILL MODAL */}
-      {showGenerateBillModal && (
+
+      {/* ── Generate Bills Modal ──────────────────────────────────────────────── */}
+      {showGenModal && (
         <div className="modal-overlay">
           <div className="modal-container card">
             <h2 className="modal-title">Generate Monthly Bills</h2>
-            <p className="modal-subtitle">Create new maintenance bills</p>
-            
-            <div className="generate-options">
-              <button 
-                className={`btn ${!generateForAll ? 'btn-primary' : 'btn-outline'} option-btn`}
-                onClick={handleGenerateForSingle}
-              >
-                Generate for Single Flat
-              </button>
-              <button 
-                className={`btn ${generateForAll ? 'btn-primary' : 'btn-outline'} option-btn`}
-                onClick={handleGenerateForAll}
-              >
-                Generate for All Flats
-              </button>
-            </div>
+            <p className="modal-subtitle">
+              Bills are calculated automatically using each flat&apos;s area × the society rate.
+            </p>
 
-            {!generateForAll && (
+            <div className="grid grid-2" style={{ gap: "16px", marginBottom: "16px" }}>
               <div className="form-group">
-                <label className="label">Select Flat</label>
-                <select className="input flat-select">
-                  {flats.map(flat => (
-                    <option key={flat.flat} value={flat.flat}>
-                      {flat.flat} - {flat.resident}
-                    </option>
+                <label className="label">Month</label>
+                <select className="input" value={genMonth} onChange={(e) => setGenMonth(Number(e.target.value))}>
+                  {MONTH_NAMES.map((n, i) => (
+                    <option key={i + 1} value={i + 1}>{n}</option>
                   ))}
                 </select>
               </div>
+              <div className="form-group">
+                <label className="label">Year</label>
+                <input
+                  type="number"
+                  className="input"
+                  value={genYear}
+                  min={2020}
+                  max={2100}
+                  onChange={(e) => setGenYear(Number(e.target.value))}
+                />
+              </div>
+            </div>
+
+            {genResult && (
+              <div style={{
+                marginBottom: "12px", fontSize: "0.9rem",
+                color: "var(--success, #388e3c)", background: "var(--success-light, #e8f5e9)",
+                padding: "10px 14px", borderRadius: "6px"
+              }}>
+                {genResult.msg}
+                {genResult.skipped?.length > 0 && (
+                  <div style={{ marginTop: "6px", color: "var(--text-muted)" }}>
+                    Skipped {genResult.skipped.length} flat(s) (already billed or no area set).
+                  </div>
+                )}
+              </div>
             )}
 
-            <div className="form-group">
-              <label className="label">Month</label>
-              <select className="input">
-                {months.map(month => (
-                  <option key={month} value={month}>{month}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="label">Amount (₹)</label>
-              <input type="number" className="input" defaultValue="4500" />
-            </div>
-
-            <div className="form-group">
-              <label className="label">Due Date</label>
-              <input type="text" className="input" defaultValue="Apr 15, 2026" placeholder="e.g., Apr 15, 2026" />
-            </div>
+            {error && (
+              <div style={{ marginBottom: "12px", fontSize: "0.9rem", color: "var(--danger, #d32f2f)" }}>
+                {error}
+              </div>
+            )}
 
             <div className="modal-actions">
-              <button 
+              <button
                 className="btn btn-outline modal-btn"
-                onClick={() => setShowGenerateBillModal(false)}
+                onClick={() => { setShowGenModal(false); setGenResult(null); clearError(); }}
               >
-                Cancel
+                {genResult ? "Close" : "Cancel"}
               </button>
-              <button 
-                className="btn btn-primary modal-btn"
-                onClick={handleConfirmGenerateBill}
-              >
-                Generate {generateForAll ? 'Bills' : 'Bill'}
-              </button>
+              {!genResult && (
+                <button
+                  className="btn btn-primary modal-btn"
+                  onClick={handleConfirmGenerate}
+                  disabled={saving}
+                >
+                  {saving ? "Generating…" : "Generate Bills"}
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* HEADER */}
+      {/* ── Header ────────────────────────────────────────────────────────────── */}
       <section className="page-header dashboard-header">
         <div>
-          <h1>Maintenance {role === "admin" ? "Management" : "Bills"}</h1>
+          <h1>Maintenance {isAdmin ? "Management" : "Bills"}</h1>
           <p className="card-description">
-            {role === "admin" 
+            {isAdmin
               ? "Manage society maintenance bills and track payments."
-              : "View and pay your maintenance bills."
-            }
+              : "View and pay your maintenance bills."}
           </p>
         </div>
-
         <div className="header-actions">
-          {role === "admin" ? (
+          {isAdmin ? (
             <>
-              <button className="btn btn-primary" onClick={handleGenerateBill}>
+              <button className="btn btn-primary" onClick={() => { setGenResult(null); setShowGenModal(true); }}>
                 Generate Bills
               </button>
               <button className="btn btn-outline" onClick={handleExportReport}>
@@ -448,16 +200,28 @@ function MaintenanceBills() {
               </button>
             </>
           ) : (
-            <button className="btn btn-outline" onClick={() => alert("Download All Invoices")}>
+            <button className="btn btn-outline" onClick={handleExportReport}>
               Download All Invoices
             </button>
           )}
         </div>
       </section>
 
-      {/* SUMMARY CARDS */}
+      {/* Global error */}
+      {error && !showGenModal && (
+        <div style={{
+          background: "var(--danger-light, #fdecea)", color: "var(--danger, #d32f2f)",
+          padding: "12px 16px", borderRadius: "8px", marginBottom: "4px",
+          display: "flex", justifyContent: "space-between", alignItems: "center"
+        }}>
+          <span>{error}</span>
+          <span onClick={clearError} style={{ cursor: "pointer", fontWeight: "bold" }}>✕</span>
+        </div>
+      )}
+
+      {/* ── Summary Cards ─────────────────────────────────────────────────────── */}
       <section className="grid grid-4">
-        {role === "admin" ? (
+        {isAdmin ? (
           <>
             <div className="card stat">
               <h3>Total Revenue</h3>
@@ -476,7 +240,11 @@ function MaintenanceBills() {
             </div>
             <div className="card stat">
               <h3>Collection Rate</h3>
-              <h2>{totals.totalAmount > 0 ? Math.round((totals.paidAmount / totals.totalAmount) * 100) : 0}%</h2>
+              <h2>
+                {totals.totalAmount > 0
+                  ? Math.round((totals.paidAmount / totals.totalAmount) * 100)
+                  : 0}%
+              </h2>
               <p>Payment efficiency</p>
             </div>
           </>
@@ -487,7 +255,8 @@ function MaintenanceBills() {
               <h2>{bills.length}</h2>
               <p>All time</p>
             </div>
-            <div className="card stat" onClick={() => setFilterStatus("pending")}>
+            <div className="card stat" style={{ cursor: "pointer" }}
+              onClick={() => setFilterStatus("pending")}>
               <h3>Amount Due</h3>
               <h2>₹{totals.pendingAmount.toLocaleString()}</h2>
               <p>Payment pending</p>
@@ -506,66 +275,54 @@ function MaintenanceBills() {
         )}
       </section>
 
-      {/* FILTERS */}
+      {/* ── Filters ───────────────────────────────────────────────────────────── */}
       <div className="card filter-card">
         <h3>Filter Bills</h3>
         <div className="filter-grid">
           <div className="filter-options">
             <div className="form-group">
               <label className="label">Status</label>
-              <select 
-                className="input"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
+              <select className="input" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                 <option value="all">All Status</option>
                 <option value="paid">Paid</option>
                 <option value="pending">Pending</option>
                 <option value="overdue">Overdue</option>
               </select>
             </div>
-
             <div className="form-group">
-              <label className="label">Month</label>
-              <select 
-                className="input"
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-              >
-                <option value="all">All Months</option>
-                {months.map(month => (
-                  <option key={month} value={month}>{month}</option>
+              <label className="label">Year</label>
+              <select className="input" value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+                <option value="all">All Years</option>
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}</option>
                 ))}
               </select>
             </div>
-
-            {role === "admin" && (
-              <div className="form-group">
-                <label className="label">Sort By</label>
-                <select className="input" defaultValue="dueDate">
-                  <option value="dueDate">Due Date</option>
-                  <option value="amount">Amount</option>
-                  <option value="flat">Flat Number</option>
-                  <option value="status">Status</option>
-                </select>
-              </div>
-            )}
+            <div className="form-group">
+              <label className="label">Month</label>
+              <select className="input" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
+                <option value="all">All Months</option>
+                {MONTH_NAMES.map((n, i) => (
+                  <option key={i + 1} value={i + 1}>{n}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* BILLS TABLE */}
+      {/* ── Bills Table ───────────────────────────────────────────────────────── */}
       <div className="card">
         <div className="card-header">
-          <h3>
-            {role === "admin" ? "Society Maintenance Bills" : "Your Maintenance Bills"}
-          </h3>
-          <div className="table-count">
-            Showing {filteredBills.length} of {bills.length} bills
-          </div>
+          <h3>{isAdmin ? "Society Maintenance Bills" : "Your Maintenance Bills"}</h3>
+          <div className="table-count">Showing {filtered.length} of {bills.length} bills</div>
         </div>
 
-        {filteredBills.length === 0 ? (
+        {loading && !bills.length ? (
+          <p style={{ color: "var(--text-muted)", padding: "40px 0", textAlign: "center" }}>
+            Loading bills…
+          </p>
+        ) : filtered.length === 0 ? (
           <div className="empty-state">
             <p>No bills found matching your filters.</p>
           </div>
@@ -575,8 +332,7 @@ function MaintenanceBills() {
               <thead>
                 <tr>
                   <th>Bill ID</th>
-                  {role === "admin" && <th>Flat</th>}
-                  {role === "admin" && <th>Resident</th>}
+                  {isAdmin && <th>Flat</th>}
                   <th>Month</th>
                   <th>Amount</th>
                   <th>Due Date</th>
@@ -585,172 +341,100 @@ function MaintenanceBills() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBills.map((bill) => (
+                {filtered.map((bill) => (
                   <>
-                    <tr key={bill.id}>
+                    <tr key={bill._id}>
                       <td>
-                        <div className="table-primary">{bill.id}</div>
-                      </td>
-                      {role === "admin" && (
-                        <>
-                          <td>
-                            <div className="table-primary">{bill.flat}</div>
-                          </td>
-                          <td>
-                            <div className="table-primary">{bill.resident}</div>
-                            <div className="table-secondary">{bill.contact}</div>
-                          </td>
-                        </>
-                      )}
-                      <td>
-                        <div className="table-primary">{bill.month}</div>
-                      </td>
-                      <td>
-                        <div className="table-primary">₹{bill.amount.toLocaleString()}</div>
-                      </td>
-                      <td>
-                        <div className="table-primary">{bill.dueDate}</div>
-                        <div className="table-secondary">
-                          {bill.status === "paid" ? `Paid on ${bill.paidDate}` : "Due"}
+                        <div className="table-primary" style={{ fontFamily: "monospace", fontSize: "0.78rem" }}>
+                          {String(bill._id).slice(-8)}
                         </div>
                       </td>
+                      {isAdmin && (
+                        <td>
+                          <div className="table-primary">{flatLabel(bill.flatId)}</div>
+                          {bill.flatId?.areaSqFt && (
+                            <div className="table-secondary">{bill.flatId.areaSqFt} sq ft</div>
+                          )}
+                        </td>
+                      )}
                       <td>
-                        <span className={`status-${bill.status}`}>
-                          {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
+                        <div className="table-primary">{monthLabel(bill.month, bill.year)}</div>
+                      </td>
+                      <td>
+                        <div className="table-primary">₹{(bill.amount ?? 0).toLocaleString()}</div>
+                      </td>
+                      <td>
+                        <div className="table-primary">{formatDate(bill.dueDate)}</div>
+                      </td>
+                      <td>
+                        <span className={`status-${bill._status}`}>
+                          {bill._status.charAt(0).toUpperCase() + bill._status.slice(1)}
                         </span>
                       </td>
                       <td>
                         <div className="action-buttons">
-                          {role === "admin" ? (
-                            <>
-                              {bill.status !== "paid" ? (
-                                <>
-                                  <button 
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => handleSendReminder(bill.id, bill.resident)}
-                                  >
-                                    Remind
-                                  </button>
-                                  <button 
-                                    className="btn btn-outline btn-sm"
-                                    onClick={() => handleMarkAsPaid(bill.id)}
-                                  >
-                                    Mark Paid
-                                  </button>
-                                  <button 
-                                    className="btn btn-outline btn-sm"
-                                    onClick={() => handleViewDetails(bill)}
-                                  >
-                                    {selectedBill?.id === bill.id ? "Hide" : "View"}
-                                  </button>
-                                </>
-                              ) : (
-                                <button 
-                                  className="btn btn-outline btn-sm"
-                                  onClick={() => handleViewDetails(bill)}
-                                >
-                                  {selectedBill?.id === bill.id ? "Hide" : "View"}
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              {bill.status !== "paid" ? (
-                                <button 
-                                  className="btn btn-primary btn-sm"
-                                  onClick={() => handlePayNow(bill.id)}
-                                >
-                                  Pay Now
-                                </button>
-                              ) : (
-                                <button 
-                                  className="btn btn-outline btn-sm"
-                                  onClick={() => handleDownloadInvoice(bill.id)}
-                                >
-                                  Invoice
-                                </button>
-                              )}
-                              <button 
-                                className="btn btn-outline btn-sm"
-                                onClick={() => handleViewDetails(bill)}
-                              >
-                                {selectedBill?.id === bill.id ? "Hide" : "Details"}
-                              </button>
-                            </>
+                          {!isAdmin && bill._status !== "paid" && (
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => handlePayNow(bill)}
+                              disabled={paying}
+                            >
+                              {paying ? "Processing…" : "Pay Now"}
+                            </button>
                           )}
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => setSelectedBillId(selectedBillId === bill._id ? null : bill._id)}
+                          >
+                            {selectedBillId === bill._id ? "Hide" : "Details"}
+                          </button>
                         </div>
                       </td>
                     </tr>
-                    
-                    {/* Expanded Details Row */}
-                    {selectedBill?.id === bill.id && (
-                      <tr className="details-row">
-                        <td colSpan={role === "admin" ? 8 : 6}>
+
+                    {selectedBillId === bill._id && (
+                      <tr className="details-row" key={`${bill._id}-details`}>
+                        <td colSpan={isAdmin ? 7 : 6}>
                           <div className="bill-details">
                             <h4>Bill Details</h4>
-                            
-                            <div className={`details-grid ${role === "admin" ? "admin-grid" : "resident-grid"}`}>
+                            <div className="details-grid resident-grid">
                               <div>
                                 <p className="table-secondary">Bill ID</p>
-                                <p className="table-primary">{bill.id}</p>
+                                <p className="table-primary" style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
+                                  {bill._id}
+                                </p>
                               </div>
                               <div>
-                                <p className="table-secondary">Month</p>
-                                <p className="table-primary">{bill.month}</p>
+                                <p className="table-secondary">Period</p>
+                                <p className="table-primary">{monthLabel(bill.month, bill.year)}</p>
                               </div>
                               <div>
                                 <p className="table-secondary">Amount</p>
-                                <p className="table-primary">₹{bill.amount.toLocaleString()}</p>
+                                <p className="table-primary">₹{(bill.amount ?? 0).toLocaleString()}</p>
                               </div>
                               <div>
                                 <p className="table-secondary">Due Date</p>
-                                <p className="table-primary">{bill.dueDate}</p>
+                                <p className="table-primary">{formatDate(bill.dueDate)}</p>
                               </div>
-                              {role === "admin" && (
+                              {isAdmin && (
                                 <div>
-                                  <p className="table-secondary">Contact</p>
-                                  <p className="table-primary">{bill.contact}</p>
+                                  <p className="table-secondary">Flat</p>
+                                  <p className="table-primary">{flatLabel(bill.flatId)}</p>
                                 </div>
                               )}
-                              {bill.status === "paid" && (
-                                <>
-                                  <div>
-                                    <p className="table-secondary">Transaction ID</p>
-                                    <p className="table-primary">{bill.transactionId}</p>
-                                  </div>
-                                  <div>
-                                    <p className="table-secondary">Payment Date</p>
-                                    <p className="table-primary">{bill.paidDate}</p>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                            
-                            {role === "admin" && bill.status !== "paid" && (
-                              <div className="admin-actions">
-                                <h5>Admin Actions</h5>
-                                <div className="action-buttons">
-                                  <button 
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => handleSendReminder(bill.id, bill.resident)}
-                                  >
-                                    Send Payment Reminder
-                                  </button>
-                                  <button 
-                                    className="btn btn-outline btn-sm"
-                                    onClick={() => alert(`Contact ${bill.resident} at ${bill.contact}`)}
-                                  >
-                                    Contact Resident
-                                  </button>
-                                  <button 
-                                    className="btn btn-outline btn-sm"
-                                    onClick={() => handleMarkAsPaid(bill.id)}
-                                  >
-                                    Mark as Paid Manually
-                                  </button>
+                              {isAdmin && bill.flatId?.areaSqFt && (
+                                <div>
+                                  <p className="table-secondary">Area</p>
+                                  <p className="table-primary">{bill.flatId.areaSqFt} sq ft</p>
                                 </div>
+                              )}
+                              <div>
+                                <p className="table-secondary">Status</p>
+                                <span className={`status-${bill._status}`}>
+                                  {bill._status.charAt(0).toUpperCase() + bill._status.slice(1)}
+                                </span>
                               </div>
-                            )}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -762,25 +446,21 @@ function MaintenanceBills() {
           </div>
         )}
 
-        {/* FOOTER SECTION */}
         <div className="footer-section">
-          <h4>
-            {role === "admin" ? "Administration Tools" : "Payment Information"}
-          </h4>
+          <h4>{isAdmin ? "Administration Tools" : "Payment Information"}</h4>
           <p className="table-secondary">
-            {role === "admin" 
+            {isAdmin
               ? "Use the tools above to manage society maintenance efficiently."
-              : "Payments can be made via UPI, Net Banking, or Credit/Debit Card."
-            }
+              : "Payments are processed securely via Razorpay (UPI, Net Banking, Cards)."}
           </p>
           <div className="action-buttons">
-            {role === "admin" ? (
+            {isAdmin ? (
               <button className="btn btn-outline payment-info-btn" onClick={handleExportReport}>
                 Export Financial Report
               </button>
             ) : (
               <>
-                <button className="btn btn-outline payment-info-btn" onClick={() => alert("Download All Invoices")}>
+                <button className="btn btn-outline payment-info-btn" onClick={handleExportReport}>
                   Download All Invoices
                 </button>
                 <button className="btn btn-outline payment-info-btn" onClick={() => navigate("/complaints")}>
@@ -792,16 +472,6 @@ function MaintenanceBills() {
         </div>
       </div>
 
-      <style jsx>{`
-        .generate-options {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 20px;
-        }
-        .option-btn {
-          flex: 1;
-        }
-      `}</style>
     </div>
   );
 }
