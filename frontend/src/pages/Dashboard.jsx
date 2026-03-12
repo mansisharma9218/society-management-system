@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../viewmodels/useAuthStore";
 import { useApplicationStore } from "../viewmodels/useApplicationStore";
 import { useAnnouncementStore } from "../viewmodels/useAnnouncementStore";
+import { useComplaintStore } from "../viewmodels/useComplaintStore";
+import { useMaintenanceBillStore } from "../viewmodels/useMaintenanceBillStore";
+import { useFlatStore } from "../viewmodels/useFlatStore";
+import { useBookingStore } from "../viewmodels/useBookingStore";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -11,11 +15,21 @@ function Dashboard() {
 
   const { applications, fetchApplications } = useApplicationStore();
   const { announcements, fetchAnnouncements } = useAnnouncementStore();
+  const { complaints, fetchComplaints } = useComplaintStore();
+  const { bills, fetchBills } = useMaintenanceBillStore();
+  const { flats, fetchFlats } = useFlatStore();
+  const { bookings, fetchBookings } = useBookingStore();
 
   // Fetch data on mount
   useEffect(() => {
     fetchAnnouncements();
-    if (isAdmin) fetchApplications();
+    fetchComplaints();
+    fetchBills();
+    fetchBookings();
+    if (isAdmin) {
+      fetchApplications();
+      fetchFlats();
+    }
   }, [isAdmin]);
 
   // Up to 3 active (non-expired) announcements for the widget
@@ -26,6 +40,20 @@ function Dashboard() {
   const pendingCount = applications.length;
   // Show up to 3 most recent in the dashboard widget
   const recentApplications = applications.slice(0, 3);
+
+  // Derived stats
+  const occupiedFlatsCount = flats.filter((f) => f.isActive).length;
+  const openComplaintsCount = complaints.filter(
+    (c) => c.status !== "RESOLVED" && c.status !== "CLOSED"
+  ).length;
+  const unpaidBillsTotal = bills
+    .filter((b) => b.status === "UNPAID")
+    .reduce((sum, b) => sum + (b.amount || 0), 0);
+  const today = new Date().toISOString().split("T")[0];
+  const todayBookingsCount = bookings.filter(
+    (b) => b.date && b.date.startsWith(today)
+  ).length;
+  const recentComplaints = complaints.slice(0, 3);
 
   return (
     <div className="page">
@@ -68,7 +96,7 @@ function Dashboard() {
               onClick={() => navigate("/users")}
             >
               <h3>Total Residents</h3>
-              <h2>—</h2>
+              <h2>{occupiedFlatsCount}</h2>
               <p>Active members in society</p>
             </div>
 
@@ -78,7 +106,7 @@ function Dashboard() {
               onClick={() => navigate("/maintenance")}
             >
               <h3>Maintenance Due</h3>
-              <h2>₹42,000</h2>
+              <h2>₹{unpaidBillsTotal.toLocaleString("en-IN")}</h2>
               <p>Pending for this month</p>
             </div>
 
@@ -88,27 +116,21 @@ function Dashboard() {
               onClick={() => navigate("/complaints")}
             >
               <h3>Open Complaints</h3>
-              <h2>7</h2>
+              <h2>{openComplaintsCount}</h2>
               <p>Awaiting resolution</p>
             </div>
           </>
         ) : (
           // ── Resident stats ────────────────────────────────────────────────
           <>
-            <div className="card stat">
-              <h3>Total Residents</h3>
-              <h2>128</h2>
-              <p>Active members in society</p>
-            </div>
-
             <div
               className="card stat"
               style={{ cursor: "pointer" }}
               onClick={() => navigate("/maintenance")}
             >
               <h3>Maintenance Due</h3>
-              <h2>₹42,000</h2>
-              <p>Pending for this month</p>
+              <h2>₹{unpaidBillsTotal.toLocaleString("en-IN")}</h2>
+              <p>Unpaid bills total</p>
             </div>
 
             <div
@@ -116,9 +138,9 @@ function Dashboard() {
               style={{ cursor: "pointer" }}
               onClick={() => navigate("/complaints")}
             >
-              <h3>Open Complaints</h3>
-              <h2>7</h2>
-              <p>Awaiting resolution</p>
+              <h3>My Complaints</h3>
+              <h2>{complaints.length}</h2>
+              <p>{openComplaintsCount} open</p>
             </div>
 
             <div
@@ -126,9 +148,19 @@ function Dashboard() {
               style={{ cursor: "pointer" }}
               onClick={() => navigate("/bookings")}
             >
-              <h3>Facility Bookings</h3>
-              <h2>3</h2>
-              <p>Scheduled today</p>
+              <h3>My Bookings</h3>
+              <h2>{bookings.length}</h2>
+              <p>{todayBookingsCount} scheduled today</p>
+            </div>
+
+            <div
+              className="card stat"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/announcements")}
+            >
+              <h3>Announcements</h3>
+              <h2>{announcements.length}</h2>
+              <p>Society notices</p>
             </div>
           </>
         )}
@@ -218,11 +250,40 @@ function Dashboard() {
                 View All
               </button>
             </div>
-            <ul className="list">
-              <li>Lift not working – Block A</li>
-              <li>Water leakage – Flat B-203</li>
-              <li>Street light issue near gate</li>
-            </ul>
+            {recentComplaints.length === 0 ? (
+              <p style={{ color: "var(--text-muted)", padding: "12px 0" }}>
+                No complaints yet.
+              </p>
+            ) : (
+              <ul className="list">
+                {recentComplaints.map((c) => (
+                  <li key={c._id}>
+                    <strong>{c.category}</strong>
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        fontSize: "0.8rem",
+                        color:
+                          c.status === "RESOLVED"
+                            ? "var(--success)"
+                            : c.status === "IN_PROGRESS"
+                            ? "var(--warning)"
+                            : "var(--danger)",
+                      }}
+                    >
+                      {c.status}
+                    </span>
+                    {c.description && (
+                      <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.82rem" }}>
+                        {c.description.length > 55
+                          ? c.description.slice(0, 55) + "…"
+                          : c.description}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </section>
