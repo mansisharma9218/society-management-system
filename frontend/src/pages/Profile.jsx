@@ -190,7 +190,7 @@ function Profile() {
           </section>
 
           {/* ── Change Password ───────────────────────────────────────────── */}
-          <section className="card">
+          <section className="card" style={{ marginBottom: "2rem" }}>
             <div className="card-header">
               <h3>Change Password</h3>
             </div>

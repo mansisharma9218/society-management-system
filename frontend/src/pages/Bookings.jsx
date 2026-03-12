@@ -1,168 +1,58 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../viewmodels/useAuthStore";
+import { useBookingStore } from "../viewmodels/useBookingStore";
+import { useFacilityStore } from "../viewmodels/useFacilityStore";
+
+const STATUS_COLOR = { PENDING: "#d97706", APPROVED: "green", REJECTED: "#e53e3e" };
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "-");
 
 function Bookings() {
   const navigate = useNavigate();
-  const [role, setRole] = useState("resident");
-  
-  // Sample bookings data
-  const [allBookings, setAllBookings] = useState([
-    { id: 1, facility: "Club House", date: "2024-01-25", time: "18:00 - 21:00", bookedBy: "Rajesh Kumar", flat: "A-101", status: "Confirmed" },
-    { id: 2, facility: "Swimming Pool", date: "2024-01-26", time: "15:00 - 17:00", bookedBy: "Priya Sharma", flat: "B-205", status: "Pending" },
-    { id: 3, facility: "Tennis Court", date: "2024-01-24", time: "07:00 - 09:00", bookedBy: "Amit Patel", flat: "C-302", status: "Confirmed" },
-    { id: 4, facility: "Gym", date: "2024-01-27", time: "19:00 - 20:00", bookedBy: "Sneha Reddy", flat: "D-104", status: "Cancelled" },
-    { id: 5, facility: "Club House", date: "2024-01-15", time: "18:00 - 21:00", bookedBy: "Current User", flat: "B-203", status: "Confirmed" },
-    { id: 6, facility: "Swimming Pool", date: "2024-01-10", time: "10:00 - 12:00", bookedBy: "Current User", flat: "B-203", status: "Confirmed" }
-  ]);
+  const { user } = useAuthStore();
+  const role = (user?.role ?? "resident").toLowerCase();
 
-  const [facilities] = useState([
-    { name: "Club House", rate: "₹2,500/hour", capacity: "100 persons" },
-    { name: "Swimming Pool", rate: "₹1,000/hour", capacity: "30 persons" },
-    { name: "Tennis Court", rate: "₹800/hour", capacity: "4 persons" },
-    { name: "Gym", rate: "₹500/hour", capacity: "15 persons" }
-  ]);
+  const {
+    bookings, loading, saving, error,
+    fetchBookings, createBooking, approveBooking, rejectBooking, clearError,
+  } = useBookingStore();
+  const { facilities, fetchFacilities } = useFacilityStore();
 
-  const [newBooking, setNewBooking] = useState({
-    facility: "",
-    date: "",
-    time: "",
-    purpose: ""
-  });
+  const [form, setForm] = useState({ facilityId: "", date: "", startTime: "", endTime: "" });
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Get user role and info from localStorage
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    let userRole = "resident";
-    
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        userRole = (user.role || "resident").toLowerCase();
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
-    
-    setRole(userRole);
+    fetchBookings();
+    fetchFacilities();
   }, []);
 
-  // Filter bookings based on role
-  const getRecentBookings = () => {
-    if (role === "admin") {
-      // Admin sees all bookings (latest first)
-      return [...allBookings].sort((a, b) => b.id - a.id);
-    } else {
-      // Resident sees only their bookings
-      return allBookings.filter(booking => 
-        booking.flat === "B-203" || booking.bookedBy === "Current User"
-      ).sort((a, b) => b.id - a.id);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const ok = await createBooking(form);
+    if (ok) {
+      setForm({ facilityId: "", date: "", startTime: "", endTime: "" });
+      setSubmitSuccess(true);
+      setTimeout(() => setSubmitSuccess(false), 3000);
     }
   };
 
-  const handleNewBooking = () => {
-    // Get current user info
-    const userData = localStorage.getItem("user");
-    let userName = "Current User";
-    let userFlat = "B-203";
-    
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        userName = user.name || "Current User";
-        userFlat = user.flat || "B-203";
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
+  const pending  = bookings.filter((b) => b.status === "PENDING").length;
+  const approved = bookings.filter((b) => b.status === "APPROVED").length;
+  const rejected = bookings.filter((b) => b.status === "REJECTED").length;
 
-    // Create new booking object
-    const newBookingEntry = {
-      id: allBookings.length + 1,
-      facility: newBooking.facility,
-      date: newBooking.date,
-      time: newBooking.time,
-      bookedBy: userName,
-      flat: userFlat,
-      status: "Pending"
-    };
-
-    // Add to all bookings
-    setAllBookings([newBookingEntry, ...allBookings]);
-    
-    // Show success message
-    alert("Booking request submitted successfully!");
-    
-    // Reset form
-    setNewBooking({ facility: "", date: "", time: "", purpose: "" });
-  };
-
-  const handleMarkAsBooked = (bookingId) => {
-    // Update booking status to Confirmed
-    setAllBookings(allBookings.map(booking => 
-      booking.id === bookingId 
-        ? { ...booking, status: "Confirmed" } 
-        : booking
-    ));
-    
-    alert("Booking marked as confirmed!");
-  };
-
-  // Stats for admin only
-  const renderAdminStats = () => {
-    if (role !== "admin") return null;
-
-    // Calculate stats
-    const today = new Date().toISOString().split('T')[0];
-    const todayBookings = allBookings.filter(b => b.date === today).length;
-    const upcomingBookings = allBookings.filter(b => b.date > today).length;
-    const pendingBookings = allBookings.filter(b => b.status === "Pending").length;
-    
-    // Find most booked facility
-    const facilityCounts = {};
-    allBookings.forEach(b => {
-      facilityCounts[b.facility] = (facilityCounts[b.facility] || 0) + 1;
-    });
-    const mostBooked = Object.keys(facilityCounts).reduce((a, b) => 
-      facilityCounts[a] > facilityCounts[b] ? a : b, "Club House");
-
-    return (
-      <section className="grid grid-4">
-        <div className="card stat">
-          <h3>Today's Bookings</h3>
-          <h2>{todayBookings}</h2>
-          <p>Scheduled for today</p>
-        </div>
-        <div className="card stat">
-          <h3>Upcoming</h3>
-          <h2>{upcomingBookings}</h2>
-          <p>Next 7 days</p>
-        </div>
-        <div className="card stat">
-          <h3>Pending</h3>
-          <h2>{pendingBookings}</h2>
-          <p>Awaiting approval</p>
-        </div>
-        <div className="card stat">
-          <h3>Most Booked</h3>
-          <h2>{mostBooked}</h2>
-          <p>Popular facility</p>
-        </div>
-      </section>
-    );
-  };
-
-  const recentBookings = getRecentBookings();
+  // Build a map from facility _id → facility object for display
+  const facilityMap = Object.fromEntries(facilities.map((f) => [f._id, f]));
+  const resolveFacility = (raw) => facilityMap[raw?._id ?? raw] ?? raw;
 
   return (
     <div className="page">
       <section className="page-header dashboard-header">
         <div>
           <h1>Facility Bookings</h1>
-          <p className="card-description">
-            {role === "admin" 
-              ? "Manage and approve facility bookings for all residents."
-              : "Book and manage your facility reservations."
-            }
+          <p>
+            {role === "admin"
+              ? "Review and manage all facility booking requests."
+              : "Book a facility or track your reservation status."}
           </p>
         </div>
         <div className="header-actions">
@@ -172,130 +62,170 @@ function Bookings() {
         </div>
       </section>
 
-      {/* Stats Section - Only visible to admin */}
-      {renderAdminStats()}
-
-      <div className={`bookings-layout ${role === 'admin' ? 'admin-view' : 'resident-view'}`}>
-        {/* Recent Bookings */}
-        <div className="card bookings-table-card">
-          <h3 className="card-title">
-            {role === "admin" ? "Recent Bookings" : "My Recent Bookings"}
-          </h3>
-          
-          <div className="table-container">
-            <table className="bookings-table">
-              <thead>
-                <tr>
-                  <th>Facility</th>
-                  {role === "admin" && <th>Booked By</th>}
-                  <th>Date & Time</th>
-                  <th>Status</th>
-                  {role === "admin" && <th>Actions</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {recentBookings.map((booking) => (
-                  <tr key={booking.id}>
-                    <td>
-                      <div className="facility-name">{booking.facility}</div>
-                      <div className="flat-number">{booking.flat}</div>
-                    </td>
-                    {role === "admin" && (
-                      <td>
-                        <div className="booked-by-name">{booking.bookedBy}</div>
-                        <div className="flat-number">{booking.flat}</div>
-                      </td>
-                    )}
-                    <td>
-                      <div className="booking-date">{booking.date}</div>
-                      <div className="booking-time">{booking.time}</div>
-                    </td>
-                    <td>
-                      <span className={`status-badge status-${booking.status.toLowerCase()}`}>
-                        {booking.status}
-                      </span>
-                    </td>
-                    {role === "admin" && (
-                      <td>
-                        {booking.status === "Pending" && (
-                          <button 
-                            className="btn btn-primary btn-sm mark-booked-btn"
-                            onClick={() => handleMarkAsBooked(booking.id)}
-                          >
-                            Mark Booked
-                          </button>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Book New Facility */}
-        <div className="card booking-form-card">
-          <h3 className="card-title">Book New Facility</h3>
-          
-          <div className="form-group">
-            <label className="label">Select Facility</label>
-            <select 
-              className="input"
-              value={newBooking.facility}
-              onChange={(e) => setNewBooking({...newBooking, facility: e.target.value})}
-            >
-              <option value="">Choose a facility</option>
-              {facilities.map((facility, index) => (
-                <option key={index} value={facility.name}>{facility.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="label">Date</label>
-            <input
-              type="date"
-              className="input date-input"
-              value={newBooking.date}
-              onChange={(e) => setNewBooking({...newBooking, date: e.target.value})}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="label">Time Slot</label>
-            <select 
-              className="input"
-              value={newBooking.time}
-              onChange={(e) => setNewBooking({...newBooking, time: e.target.value})}
-            >
-              <option value="">Select time</option>
-              <option value="07:00 - 09:00">Morning: 7 AM - 9 AM</option>
-              <option value="10:00 - 12:00">Late Morning: 10 AM - 12 PM</option>
-              <option value="15:00 - 17:00">Afternoon: 3 PM - 5 PM</option>
-              <option value="18:00 - 21:00">Evening: 6 PM - 9 PM</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="label">Purpose (Optional)</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="Birthday party, Anniversary, etc."
-              value={newBooking.purpose}
-              onChange={(e) => setNewBooking({...newBooking, purpose: e.target.value})}
-            />
-          </div>
-
-          <button 
-            className="btn btn-primary btn-full submit-booking-btn"
-            onClick={handleNewBooking}
-            disabled={!newBooking.facility || !newBooking.date || !newBooking.time}
+      {error && (
+        <div className="alert alert-error">
+          <span>{error}</span>
+          <button
+            onClick={clearError}
+            style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", fontWeight: "bold" }}
           >
-            Submit Booking Request
+            x
           </button>
         </div>
+      )}
+
+      {submitSuccess && (
+        <div className="alert alert-success">
+          <span>Booking request submitted! Awaiting admin approval.</span>
+        </div>
+      )}
+
+      {role === "admin" && (
+        <section className="grid grid-4">
+          <div className="card stat"><h3>Total</h3><h2>{bookings.length}</h2><p>All bookings</p></div>
+          <div className="card stat"><h3>Pending</h3><h2>{pending}</h2><p>Awaiting approval</p></div>
+          <div className="card stat"><h3>Approved</h3><h2>{approved}</h2><p>Confirmed</p></div>
+          <div className="card stat"><h3>Rejected</h3><h2>{rejected}</h2><p>Declined</p></div>
+        </section>
+      )}
+
+      <div className={role === "resident" ? "grid grid-2" : ""}>
+        {role === "resident" && (
+          <section className="card">
+            <div className="card-header"><h3>New Booking Request</h3></div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="label">Facility</label>
+                <select
+                  className="input"
+                  value={form.facilityId}
+                  onChange={(e) => setForm((f) => ({ ...f, facilityId: e.target.value }))}
+                  required
+                >
+                  <option value="" disabled>Select a facility</option>
+                  {facilities.filter((f) => f.isActive).map((f) => (
+                    <option key={f._id} value={f._id}>
+                      {f.name}{f.capacity ? " (cap: " + f.capacity + ")" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="label">Date</label>
+                <input
+                  type="date"
+                  className="input"
+                  value={form.date}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="label">Start Time</label>
+                <input
+                  type="time"
+                  className="input"
+                  value={form.startTime}
+                  onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="label">End Time</label>
+                <input
+                  type="time"
+                  className="input"
+                  value={form.endTime}
+                  onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
+                {saving ? "Submitting..." : "Submit Booking Request"}
+              </button>
+            </form>
+          </section>
+        )}
+
+        <section className="card">
+          <div className="card-header">
+            <h3>{role === "admin" ? "All Bookings" : "My Bookings"} ({bookings.length})</h3>
+          </div>
+          {loading ? (
+            <p style={{ textAlign: "center", color: "var(--color-muted, #888)", padding: "2rem" }}>Loading bookings...</p>
+          ) : bookings.length === 0 ? (
+            <p style={{ textAlign: "center", color: "var(--color-muted, #888)", padding: "2rem" }}>No bookings found.</p>
+          ) : (
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Facility</th>
+                    {role === "admin" && <th>Resident</th>}
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    {role === "admin" && <th>Actions</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.map((b) => (
+                    <tr key={b._id}>
+                      <td>
+                        {(() => {
+                          const fac = resolveFacility(b.facilityId);
+                          return (
+                            <>
+                              <div className="table-primary">{fac?.name ?? fac}</div>
+                              {fac?.capacity && (
+                                <div style={{ fontSize: "0.78rem", color: "var(--color-muted, #888)" }}>
+                                  Cap: {fac.capacity}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </td>
+                      {role === "admin" && (
+                        <td>
+                          <div className="table-primary">{b.userId?.name ?? "-"}</div>
+                          <div style={{ fontSize: "0.78rem", color: "var(--color-muted, #888)" }}>{b.userId?.email}</div>
+                        </td>
+                      )}
+                      <td>{fmtDate(b.date)}</td>
+                      <td style={{ fontSize: "0.85rem" }}>{b.startTime} - {b.endTime}</td>
+                      <td>
+                        <span style={{ fontWeight: 600, fontSize: "0.82rem", color: STATUS_COLOR[b.status] ?? "#888" }}>
+                          {b.status}
+                        </span>
+                      </td>
+                      {role === "admin" && (
+                        <td>
+                          {b.status === "PENDING" && (
+                            <div style={{ display: "flex", gap: "0.4rem" }}>
+                              <button className="btn btn-primary btn-sm" onClick={() => approveBooking(b._id)} disabled={saving}>
+                                Approve
+                              </button>
+                              <button
+                                className="btn btn-sm"
+                                style={{ background: "#e53e3e", color: "#fff", border: "none" }}
+                                onClick={() => rejectBooking(b._id)}
+                                disabled={saving}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
